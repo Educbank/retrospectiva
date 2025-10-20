@@ -1,30 +1,38 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from 'react-query';
-import { Plus, Users, Settings, Trash2, MoreVertical } from 'lucide-react';
+import { Plus, Users, Settings, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { teamsAPI } from '../services/api';
+import Card from '../components/Card';
+import EmptyState from '../components/EmptyState';
+import LoadingSpinner from '../components/LoadingSpinner';
+import ConfirmModal from '../components/ConfirmModal';
 
 const TeamsPage = () => {
   const queryClient = useQueryClient();
+  const [deleteModal, setDeleteModal] = useState({ isOpen: false, teamId: null, teamName: '' });
 
   const { data: teams, isLoading } = useQuery('userTeams', teamsAPI.getTeams);
-
 
   const deleteTeamMutation = useMutation(teamsAPI.deleteTeam, {
     onSuccess: () => {
       queryClient.invalidateQueries('userTeams');
       toast.success('Time removido com sucesso!');
+      setDeleteModal({ isOpen: false, teamId: null, teamName: '' });
     },
     onError: (error) => {
       toast.error(error.response?.data?.error || 'Erro ao remover time');
     },
   });
 
+  const handleDeleteTeam = (teamId, teamName) => {
+    setDeleteModal({ isOpen: true, teamId, teamName });
+  };
 
-  const handleDeleteTeam = (teamId) => {
-    if (window.confirm('Tem certeza que deseja remover este time?')) {
-      deleteTeamMutation.mutate(teamId);
+  const confirmDelete = () => {
+    if (deleteModal.teamId) {
+      deleteTeamMutation.mutate(deleteModal.teamId);
     }
   };
 
@@ -55,17 +63,17 @@ const TeamsPage = () => {
       {isLoading ? (
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {[...Array(6)].map((_, i) => (
-            <div key={i} className="card animate-pulse">
+            <Card key={i} className="animate-pulse">
               <div className="h-4 bg-gray-200 rounded w-3/4 mb-4"></div>
               <div className="h-3 bg-gray-200 rounded w-full mb-2"></div>
               <div className="h-3 bg-gray-200 rounded w-2/3"></div>
-            </div>
+            </Card>
           ))}
         </div>
       ) : teams?.data?.length > 0 ? (
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {teams.data.map((team) => (
-            <div key={team.id} className="card hover:shadow-md transition-shadow duration-200">
+            <Card key={team.id} hover>
               <div className="flex items-start justify-between">
                 <div className="flex items-center space-x-3">
                   <div className="flex-shrink-0">
@@ -91,7 +99,7 @@ const TeamsPage = () => {
                     <Settings className="h-4 w-4" />
                   </Link>
                   <button
-                    onClick={() => handleDeleteTeam(team.id)}
+                    onClick={() => handleDeleteTeam(team.id, team.name)}
                     className="text-red-600 hover:text-red-900"
                   >
                     <Trash2 className="h-4 w-4" />
@@ -111,29 +119,36 @@ const TeamsPage = () => {
                   Ver detalhes →
                 </Link>
               </div>
-            </div>
+            </Card>
           ))}
         </div>
       ) : (
-        <div className="text-center py-12">
-          <Users className="mx-auto h-12 w-12 text-gray-400" />
-          <h3 className="mt-2 text-sm font-medium text-gray-900">
-            Nenhum time encontrado
-          </h3>
-          <p className="mt-1 text-sm text-gray-500">
-            Comece criando seu primeiro time para organizar retrospectivas.
-          </p>
-          <div className="mt-6">
+        <EmptyState
+          icon={Users}
+          title="Nenhum time encontrado"
+          description="Comece criando seu primeiro time para organizar retrospectivas."
+          action={
             <Link
               to="/teams/new"
-              className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-purple-400 hover:bg-purple-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-300"
+              className="btn btn-primary"
             >
               <Plus className="h-4 w-4 mr-2" />
               Criar Primeiro Time
             </Link>
-          </div>
-        </div>
+          }
+        />
       )}
+
+      {/* Delete Confirmation Modal */}
+      <ConfirmModal
+        isOpen={deleteModal.isOpen}
+        onClose={() => setDeleteModal({ isOpen: false, teamId: null, teamName: '' })}
+        onConfirm={confirmDelete}
+        title="Remover Time"
+        message={`Tem certeza que deseja remover o time "${deleteModal.teamName}"? Esta ação não pode ser desfeita.`}
+        confirmText="Remover"
+        cancelText="Cancelar"
+      />
 
     </div>
   );

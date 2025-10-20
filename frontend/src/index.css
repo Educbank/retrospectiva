@@ -75,6 +75,50 @@
   .btn-xs {
     @apply px-2 py-1 text-xs;
   }
+
+  /* Common text colors */
+  .text-muted {
+    @apply text-gray-500;
+  }
+  
+  .text-primary {
+    @apply text-gray-900;
+  }
+  
+  .text-secondary {
+    @apply text-gray-600;
+  }
+
+  /* Common background colors */
+  .bg-muted {
+    @apply bg-gray-50;
+  }
+  
+  .bg-card {
+    @apply bg-white;
+  }
+
+  /* Common hover states */
+  .hover-lift {
+    @apply hover:shadow-md transition-shadow duration-200;
+  }
+  
+  .hover-bg {
+    @apply hover:bg-gray-50 transition-colors duration-150;
+  }
+
+  /* Common spacing */
+  .space-section {
+    @apply space-y-8;
+  }
+  
+  .space-content {
+    @apply space-y-4;
+  }
+  
+  .space-items {
+    @apply space-y-3;
+  }
   
   /* Inputs - Clean */
   .input {

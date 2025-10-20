@@ -90,7 +90,6 @@ export const retrospectivesAPI = {
   joinRetrospective: (id) => api.post(`/retrospectives/${id}/join`),
   getParticipants: (id) => api.get(`/retrospectives/${id}/participants`),
   deleteItem: (itemId) => api.delete(`/retrospectives/items/${itemId}`),
-  deleteRetrospective: (id) => api.delete(`/retrospectives/${id}`),
   reopenRetrospective: (id) => api.post(`/retrospectives/${id}/reopen`),
   createGroup: (id, data) => api.post(`/retrospectives/${id}/groups`, data),
   voteGroup: (groupId) => api.post(`/retrospectives/groups/${groupId}/vote`),

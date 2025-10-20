@@ -1,45 +1,61 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { MessageSquare, Mail, Lock, User, Eye, EyeOff } from 'lucide-react';
+import { MessageSquare, Mail, Lock, User } from 'lucide-react';
 import { useAuth } from '../services/AuthContext';
+import InputField from '../components/InputField';
+import LoadingSpinner from '../components/LoadingSpinner';
 
 const RegisterPage = () => {
+  const { register } = useAuth();
+  const navigate = useNavigate();
+
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     password: '',
     confirmPassword: '',
   });
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  
-  const { register } = useAuth();
-  const navigate = useNavigate();
+  const [errors, setErrors] = useState({});
 
   const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value,
+    }));
+    
+    // Clear error when user starts typing
+    if (errors[name]) {
+      setErrors(prev => ({
+        ...prev,
+        [name]: '',
+      }));
+    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     
+    // Basic validation
     if (formData.password !== formData.confirmPassword) {
+      setErrors({ confirmPassword: 'As senhas não coincidem' });
       return;
     }
     
     setLoading(true);
 
-    const { confirmPassword, ...registerData } = formData;
-    const result = await register(registerData);
-    if (result.success) {
-      navigate('/dashboard');
+    try {
+      const { confirmPassword, ...registerData } = formData;
+      const result = await register(registerData);
+      if (result.success) {
+        navigate('/dashboard');
+      }
+    } catch (error) {
+      console.error('Register error:', error);
+    } finally {
+      setLoading(false);
     }
-    
-    setLoading(false);
   };
 
   return (
@@ -65,131 +81,67 @@ const RegisterPage = () => {
         
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           <div className="space-y-4">
-            <div>
-              <label htmlFor="name" className="block text-sm font-medium text-gray-700">
-                Nome completo
-              </label>
-              <div className="mt-1 relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <User className="h-5 w-5 text-gray-400" />
-                </div>
-                <input
-                  id="name"
-                  name="name"
-                  type="text"
-                  autoComplete="name"
-                  required
-                  value={formData.name}
-                  onChange={handleChange}
-                  className="input pl-10"
-                  placeholder="Seu nome completo"
-                />
-              </div>
-            </div>
+            <InputField
+              label="Nome completo"
+              name="name"
+              type="text"
+              placeholder="Seu nome completo"
+              value={formData.name}
+              onChange={handleChange}
+              error={errors.name}
+              required
+              icon={User}
+              autoComplete="name"
+            />
 
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                Email
-              </label>
-              <div className="mt-1 relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Mail className="h-5 w-5 text-gray-400" />
-                </div>
-                <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  autoComplete="email"
-                  required
-                  value={formData.email}
-                  onChange={handleChange}
-                  className="input pl-10"
-                  placeholder="seu@email.com"
-                />
-              </div>
-            </div>
+            <InputField
+              label="Email"
+              name="email"
+              type="email"
+              placeholder="seu@email.com"
+              value={formData.email}
+              onChange={handleChange}
+              error={errors.email}
+              required
+              icon={Mail}
+              autoComplete="email"
+            />
             
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                Senha
-              </label>
-              <div className="mt-1 relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Lock className="h-5 w-5 text-gray-400" />
-                </div>
-                <input
-                  id="password"
-                  name="password"
-                  type={showPassword ? 'text' : 'password'}
-                  autoComplete="new-password"
-                  required
-                  value={formData.password}
-                  onChange={handleChange}
-                  className="input pl-10 pr-10"
-                  placeholder="Mínimo 6 caracteres"
-                />
-                <button
-                  type="button"
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                  onClick={() => setShowPassword(!showPassword)}
-                >
-                  {showPassword ? (
-                    <EyeOff className="h-5 w-5 text-gray-400 hover:text-gray-600" />
-                  ) : (
-                    <Eye className="h-5 w-5 text-gray-400 hover:text-gray-600" />
-                  )}
-                </button>
-              </div>
-            </div>
+            <InputField
+              label="Senha"
+              name="password"
+              type="password"
+              placeholder="Mínimo 6 caracteres"
+              value={formData.password}
+              onChange={handleChange}
+              error={errors.password}
+              required
+              icon={Lock}
+              autoComplete="new-password"
+            />
 
-            <div>
-              <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700">
-                Confirmar senha
-              </label>
-              <div className="mt-1 relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Lock className="h-5 w-5 text-gray-400" />
-                </div>
-                <input
-                  id="confirmPassword"
-                  name="confirmPassword"
-                  type={showConfirmPassword ? 'text' : 'password'}
-                  autoComplete="new-password"
-                  required
-                  value={formData.confirmPassword}
-                  onChange={handleChange}
-                  className="input pl-10 pr-10"
-                  placeholder="Confirme sua senha"
-                />
-                <button
-                  type="button"
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                >
-                  {showConfirmPassword ? (
-                    <EyeOff className="h-5 w-5 text-gray-400 hover:text-gray-600" />
-                  ) : (
-                    <Eye className="h-5 w-5 text-gray-400 hover:text-gray-600" />
-                  )}
-                </button>
-              </div>
-              {formData.password && formData.confirmPassword && formData.password !== formData.confirmPassword && (
-                <p className="mt-1 text-sm text-red-600">As senhas não coincidem</p>
-              )}
-            </div>
+            <InputField
+              label="Confirmar senha"
+              name="confirmPassword"
+              type="password"
+              placeholder="Confirme sua senha"
+              value={formData.confirmPassword}
+              onChange={handleChange}
+              error={errors.confirmPassword}
+              required
+              icon={Lock}
+              autoComplete="new-password"
+            />
           </div>
 
           <div>
             <button
               type="submit"
-              disabled={loading || formData.password !== formData.confirmPassword}
+              disabled={loading}
               className="btn btn-primary btn-lg w-full disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? (
-                <div className="flex items-center justify-center">
-                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                  Criando conta...
-                </div>
+                <LoadingSpinner size="sm" color="white" text="Criando conta..." />
               ) : (
                 'Criar conta'
               )}
