@@ -409,6 +409,9 @@ const DashboardPage = () => {
                           Atrasado
                         </span>
                       )}
+                      <span className="text-green-600 text-sm">
+                        {actionItem.completed_at ? formatDate(actionItem.completed_at) : extractCompletionDate(actionItem.description)}
+                      </span>
                     </div>
                     <div className="flex items-center space-x-4 text-sm text-gray-500 mt-1">
                       <div className="flex items-center space-x-1">
@@ -428,11 +431,8 @@ const DashboardPage = () => {
                           </span>
                         </div>
                       )}
-                      {actionItem.status === 'done' && extractCompletionDate(actionItem.description) && (
+                      {actionItem.status === 'done' && (actionItem.completed_at || extractCompletionDate(actionItem.description)) && (
                         <div className="flex items-center space-x-1">
-                          <span className="text-green-600">
-                            (concluído em: {extractCompletionDate(actionItem.description)})
-                          </span>
                         </div>
                       )}
                     </div>

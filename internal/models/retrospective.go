@@ -74,6 +74,7 @@ type ActionItem struct {
 	AssignedTo      *uuid.UUID `json:"assigned_to" db:"assigned_to"`
 	Status          string     `json:"status" db:"status"` // todo, in_progress, done
 	DueDate         *time.Time `json:"due_date" db:"due_date"`
+	CompletedAt     *time.Time `json:"completed_at" db:"completed_at"`
 	CreatedBy       uuid.UUID  `json:"created_by" db:"created_by"`
 	CreatedAt       time.Time  `json:"created_at" db:"created_at"`
 	UpdatedAt       time.Time  `json:"updated_at" db:"updated_at"`
@@ -105,6 +106,7 @@ type ActionItemUpdateRequest struct {
 	Status      *string `json:"status"`
 	AssignedTo  *string `json:"assigned_to"`
 	DueDate     *string `json:"due_date"`
+	CompletedAt *string `json:"completed_at"`
 }
 
 type RetrospectiveParticipant struct {

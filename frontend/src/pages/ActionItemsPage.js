@@ -58,7 +58,7 @@ const ActionItemsPage = () => {
       onSuccess: () => {
         queryClient.invalidateQueries('userRetrospectives');
         queryClient.invalidateQueries(['retrospective']);
-        toast.success('Action Item atualizado com sucesso!');
+        //toast.success('Action Item atualizado com sucesso!');
       },
       onError: (error) => {
         toast.error('Erro ao atualizar Action Item: ' + (error.response?.data?.error || error.message));

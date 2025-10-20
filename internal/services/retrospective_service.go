@@ -432,6 +432,18 @@ func (s *RetrospectiveService) UpdateActionItem(actionItemID, userID uuid.UUID, 
 		if !isValid {
 			return nil, errors.New("invalid status. Must be one of: todo, in_progress, done")
 		}
+
+		// If status is being changed to "done" and completed_at is not provided, set it to now
+		if *req.Status == "done" && req.CompletedAt == nil {
+			now := time.Now().Format("2006-01-02T15:04:05Z")
+			req.CompletedAt = &now
+		}
+
+		// If status is being changed from "done" to something else, clear completed_at
+		if *req.Status != "done" && actionItem.Status == "done" {
+			empty := ""
+			req.CompletedAt = &empty
+		}
 	}
 
 	return s.retroRepo.UpdateActionItem(actionItemID, req)

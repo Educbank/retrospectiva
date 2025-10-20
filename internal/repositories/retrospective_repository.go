@@ -465,7 +465,7 @@ func (r *RetrospectiveRepository) GetItemsByRetrospectiveID(retrospectiveID uuid
 
 func (r *RetrospectiveRepository) GetActionItemsByRetrospectiveID(retrospectiveID uuid.UUID) ([]models.ActionItem, error) {
 	query := `
-		SELECT id, retrospective_id, item_id, title, description, assigned_to, status, due_date, created_by, created_at, updated_at
+		SELECT id, retrospective_id, item_id, title, description, assigned_to, status, due_date, completed_at, created_by, created_at, updated_at
 		FROM action_items
 		WHERE retrospective_id = $1
 		ORDER BY created_at ASC
@@ -489,6 +489,7 @@ func (r *RetrospectiveRepository) GetActionItemsByRetrospectiveID(retrospectiveI
 			&actionItem.AssignedTo,
 			&actionItem.Status,
 			&actionItem.DueDate,
+			&actionItem.CompletedAt,
 			&actionItem.CreatedBy,
 			&actionItem.CreatedAt,
 			&actionItem.UpdatedAt,
@@ -768,7 +769,7 @@ func (r *RetrospectiveRepository) MergeItems(sourceItemID, targetItemID uuid.UUI
 // Action Item methods
 func (r *RetrospectiveRepository) GetActionItemByID(actionItemID uuid.UUID) (*models.ActionItem, error) {
 	query := `
-		SELECT id, retrospective_id, item_id, title, description, status, assigned_to, due_date, created_by, created_at, updated_at
+		SELECT id, retrospective_id, item_id, title, description, status, assigned_to, due_date, completed_at, created_by, created_at, updated_at
 		FROM action_items
 		WHERE id = $1
 	`
@@ -783,6 +784,7 @@ func (r *RetrospectiveRepository) GetActionItemByID(actionItemID uuid.UUID) (*mo
 		&actionItem.Status,
 		&actionItem.AssignedTo,
 		&actionItem.DueDate,
+		&actionItem.CompletedAt,
 		&actionItem.CreatedBy,
 		&actionItem.CreatedAt,
 		&actionItem.UpdatedAt,
@@ -839,6 +841,16 @@ func (r *RetrospectiveRepository) UpdateActionItem(actionItemID uuid.UUID, req *
 		}
 	}
 
+	if req.CompletedAt != nil {
+		if *req.CompletedAt == "" {
+			setParts = append(setParts, "completed_at = NULL")
+		} else {
+			setParts = append(setParts, fmt.Sprintf("completed_at = $%d", argIndex))
+			args = append(args, *req.CompletedAt)
+			argIndex++
+		}
+	}
+
 	if len(setParts) == 0 {
 		return nil, errors.New("no fields to update")
 	}
@@ -850,7 +862,7 @@ func (r *RetrospectiveRepository) UpdateActionItem(actionItemID uuid.UUID, req *
 		UPDATE action_items 
 		SET %s 
 		WHERE id = $%d
-		RETURNING id, retrospective_id, item_id, title, description, status, assigned_to, due_date, created_by, created_at, updated_at
+		RETURNING id, retrospective_id, item_id, title, description, status, assigned_to, due_date, completed_at, created_by, created_at, updated_at
 	`, strings.Join(setParts, ", "), argIndex)
 
 	var actionItem models.ActionItem
@@ -863,6 +875,7 @@ func (r *RetrospectiveRepository) UpdateActionItem(actionItemID uuid.UUID, req *
 		&actionItem.Status,
 		&actionItem.AssignedTo,
 		&actionItem.DueDate,
+		&actionItem.CompletedAt,
 		&actionItem.CreatedBy,
 		&actionItem.CreatedAt,
 		&actionItem.UpdatedAt,
