@@ -1,4 +1,4 @@
-.PHONY: run build clean deps test migrate-up migrate-down run-all
+.PHONY: run build clean deps test migrate-up migrate-down run-all setup-db setup check-db docker-db docker-db-start docker-db-stop docker-db-restart help
 
 # Variáveis
 BINARY_NAME=educ-retro
@@ -86,41 +86,102 @@ docs:
 	@echo "📚 Gerando documentação..."
 	swag init -g cmd/server/main.go
 
-# Executar em modo de desenvolvimento com hot reload
-dev:
-	@echo "🔥 Iniciando modo de desenvolvimento..."
-	@command -v air >/dev/null 2>&1 || { echo "Instalando air..."; go install github.com/cosmtrek/air@latest; }
-	air
+# Setup inicial do banco de dados
+setup-db:
+	@echo "🗄️  Configurando banco de dados..."
+	@if [ ! -f .env ]; then \
+		echo "📋 Criando arquivo .env a partir do exemplo..."; \
+		cp env.example .env; \
+		echo "⚠️  Por favor, edite o arquivo .env com suas configurações"; \
+	fi
+	@echo "🚀 Executando script de inicialização do banco..."
+	@./scripts/init-db.sh
 
-# Setup inicial do projeto
-setup:
-	@echo "⚙️  Configurando projeto..."
-	@echo "1. Instalando dependências..."
-	$(MAKE) deps
-	@echo "2. Criando arquivo .env..."
-	@if [ ! -f .env ]; then cp env.example .env; echo "Arquivo .env criado. Configure as variáveis."; fi
-	@echo "3. Instalando migrate CLI..."
-	@command -v migrate >/dev/null 2>&1 || { echo "Instalando migrate..."; go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@latest; }
-	@echo "✅ Setup concluído!"
-	@echo "📝 Configure o arquivo .env e execute 'make migrate-up' para configurar o banco"
+# Setup completo do projeto
+setup: deps setup-db
+	@echo "✅ Setup completo do projeto concluído!"
+	@echo "🚀 Execute 'make run' para iniciar o servidor"
+
+# Verificar status do banco
+check-db:
+	@echo "🔍 Verificando status do banco de dados..."
+	@./scripts/init-db.sh --check-only || echo "❌ Banco não está configurado. Execute 'make setup-db'"
+
+# Docker PostgreSQL - Iniciar container
+docker-db-start:
+	@echo "🐳 Iniciando PostgreSQL no Docker..."
+	@if docker ps -a --format "table {{.Names}}" | grep -q "educ-retro-postgres"; then \
+		echo "📦 Container já existe, iniciando..."; \
+		docker start educ-retro-postgres; \
+	else \
+		echo "📦 Criando e iniciando novo container..."; \
+		docker run --name educ-retro-postgres \
+			-e POSTGRES_PASSWORD=password \
+			-e POSTGRES_DB=educ_retro \
+			-p 5432:5432 \
+			-d postgres:14; \
+	fi
+	@echo "⏳ Aguardando PostgreSQL inicializar..."
+	@sleep 5
+	@echo "✅ PostgreSQL no Docker está rodando!"
+
+# Docker PostgreSQL - Parar container
+docker-db-stop:
+	@echo "🛑 Parando PostgreSQL no Docker..."
+	@docker stop educ-retro-postgres 2>/dev/null || echo "Container não estava rodando"
+	@echo "✅ PostgreSQL parado!"
+
+# Docker PostgreSQL - Reiniciar container
+docker-db-restart: docker-db-stop docker-db-start
+	@echo "🔄 PostgreSQL reiniciado!"
+
+# Docker PostgreSQL - Remover container
+docker-db-remove:
+	@echo "🗑️  Removendo container PostgreSQL..."
+	@docker stop educ-retro-postgres 2>/dev/null || true
+	@docker rm educ-retro-postgres 2>/dev/null || true
+	@echo "✅ Container removido!"
+
+# Setup completo com Docker
+docker-setup: docker-db-start setup-db
+	@echo "✅ Setup completo com Docker concluído!"
+	@echo "🚀 Execute 'make run' para iniciar o servidor"
 
 # Help
 help:
 	@echo "📋 Comandos disponíveis:"
+	@echo ""
+	@echo "🚀 Execução:"
 	@echo "  run           - Executar o servidor"
 	@echo "  run-all       - Executar backend e frontend simultaneamente"
-	@echo "  build         - Build para produção"
-	@echo "  clean         - Limpar arquivos gerados"
-	@echo "  deps          - Instalar dependências"
-	@echo "  test          - Executar testes"
-	@echo "  test-coverage - Executar testes com coverage"
+	@echo ""
+	@echo "🐳 Docker PostgreSQL:"
+	@echo "  docker-db-start    - Iniciar PostgreSQL no Docker"
+	@echo "  docker-db-stop     - Parar PostgreSQL no Docker"
+	@echo "  docker-db-restart  - Reiniciar PostgreSQL no Docker"
+	@echo "  docker-db-remove   - Remover container PostgreSQL"
+	@echo "  docker-setup       - Setup completo com Docker"
+	@echo ""
+	@echo "🗄️  Banco de Dados:"
+	@echo "  setup-db      - Configurar banco de dados"
+	@echo "  check-db      - Verificar status do banco"
 	@echo "  migrate-up    - Executar migrations"
 	@echo "  migrate-down  - Reverter migrations"
 	@echo "  migrate-reset - Resetar banco (cuidado!)"
 	@echo "  migrate-create- Criar nova migration"
+	@echo ""
+	@echo "🔧 Desenvolvimento:"
+	@echo "  setup         - Setup completo do projeto"
+	@echo "  deps          - Instalar dependências"
+	@echo "  test          - Executar testes"
+	@echo "  test-coverage - Executar testes com coverage"
 	@echo "  lint          - Executar linter"
 	@echo "  fmt           - Formatar código"
+	@echo ""
+	@echo "📦 Produção:"
+	@echo "  build         - Build para produção"
+	@echo "  clean         - Limpar arquivos gerados"
 	@echo "  docs          - Gerar documentação da API"
-	@echo "  dev           - Modo de desenvolvimento com hot reload"
-	@echo "  setup         - Setup inicial do projeto"
+	@echo ""
+	@echo "❓ Ajuda:"
 	@echo "  help          - Mostrar esta ajuda"

@@ -47,43 +47,65 @@ educ-retro/
 - PostgreSQL 12+
 - Node.js 18+ (para frontend)
 
-### 1. Clone o repositório
+### 🚀 Setup Automático (Recomendado)
+
+Para uma configuração rápida e automática, execute:
+
+```bash
+# Clone o repositório
+git clone <repository-url>
+cd educ-retro
+
+# Execute o script de setup completo
+./scripts/setup.sh
+```
+
+Este script irá:
+- ✅ Verificar todas as dependências necessárias
+- ✅ Instalar dependências do Go e Node.js
+- ✅ Configurar o banco de dados PostgreSQL
+- ✅ Executar todas as migrations
+- ✅ Criar arquivo de configuração .env
+
+Após o setup, execute:
+```bash
+# Para iniciar apenas o backend
+make run
+
+# Para iniciar backend e frontend simultaneamente
+make run-all
+```
+
+### 🔧 Setup Manual
+
+Se preferir configurar manualmente:
+
+#### 1. Clone o repositório
 ```bash
 git clone <repository-url>
 cd educ-retro
 ```
 
-### 2. Configure o banco de dados
+#### 2. Configure o banco de dados
 ```bash
-# Crie um banco PostgreSQL
-createdb educ_retro
-
 # Configure as variáveis de ambiente
 cp env.example .env
 # Edite o arquivo .env com suas configurações
+
+# Execute o setup do banco
+make setup-db
 ```
 
-### 3. Execute as migrations
+#### 3. Instale dependências e execute
 ```bash
-# Instale migrate CLI (se não tiver)
-go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@latest
-
-# Execute as migrations
-make migrate-up
-```
-
-### 4. Instale as dependências e execute
-```bash
-# Instalar dependências do backend
-go mod tidy
+# Instalar dependências
+make deps
 
 # Executar o servidor
 make run
 ```
 
-O servidor estará rodando em `http://localhost:8080`
-
-### 5. Configurar e executar o frontend
+#### 4. Configurar frontend (opcional)
 ```bash
 # Navegar para o diretório do frontend
 cd frontend
@@ -91,14 +113,14 @@ cd frontend
 # Instalar dependências do Node.js
 npm install
 
-# Configurar variáveis de ambiente
-cp env.example .env
-
 # Executar o frontend
 npm start
 ```
 
-O frontend estará rodando em `http://localhost:3000`
+### 📍 URLs de Acesso
+- **Backend**: http://localhost:8080
+- **Frontend**: http://localhost:3000
+- **Health Check**: http://localhost:8080/health
 
 ## 📚 API Endpoints
 
@@ -162,23 +184,73 @@ curl -X POST http://localhost:8080/api/v1/teams \
 
 ## 🔧 Comandos Úteis
 
+### Setup e Configuração
+```bash
+# Setup completo do projeto
+make setup
+
+# Apenas configurar banco de dados
+make setup-db
+
+# Verificar status do banco
+make check-db
+
+# Executar script de setup completo
+./scripts/setup.sh
+```
+
+### Desenvolvimento
 ```bash
 # Executar o servidor
 make run
 
-# Executar migrations
-make migrate-up
-make migrate-down
+# Executar backend e frontend simultaneamente
+make run-all
 
-# Limpar e reinstalar dependências
-make clean
+# Instalar dependências
 make deps
 
 # Executar testes
 make test
 
+# Executar testes com coverage
+make test-coverage
+```
+
+### Banco de Dados
+```bash
+# Executar migrations
+make migrate-up
+
+# Reverter migrations
+make migrate-down
+
+# Resetar banco (cuidado!)
+make migrate-reset
+
+# Criar nova migration
+make migrate-create
+```
+
+### Produção
+```bash
 # Build para produção
 make build
+
+# Limpar arquivos gerados
+make clean
+
+# Executar linter
+make lint
+
+# Formatar código
+make fmt
+```
+
+### Ajuda
+```bash
+# Ver todos os comandos disponíveis
+make help
 ```
 
 ## 🚧 Próximos Passos
