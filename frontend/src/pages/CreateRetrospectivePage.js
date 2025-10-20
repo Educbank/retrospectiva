@@ -59,6 +59,7 @@ const CreateRetrospectivePage = () => {
       case '4ls': return '📚';
       case 'mad_sad_glad': return '😊';
       case 'sailboat': return '⛵';
+      case 'went_well_to_improve': return '📈';
       default: return '📋';
     }
   };
@@ -69,6 +70,7 @@ const CreateRetrospectivePage = () => {
       case '4ls': return 'Reflita sobre o que gostou, aprendeu, faltou e deseja';
       case 'mad_sad_glad': return 'Explore aspectos emocionais do trabalho';
       case 'sailboat': return 'Visualize progresso e obstáculos em direção aos objetivos';
+      case 'went_well_to_improve': return 'Avalie o que funcionou bem e o que pode ser melhorado';
       default: return 'Template personalizado';
     }
   };

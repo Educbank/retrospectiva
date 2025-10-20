@@ -24,6 +24,7 @@ const (
 	Template4Ls               RetrospectiveTemplate = "4ls" // Liked, Learned, Lacked, Longed for
 	TemplateMadSadGlad        RetrospectiveTemplate = "mad_sad_glad"
 	TemplateSailboat          RetrospectiveTemplate = "sailboat"
+	TemplateWentWellToImprove RetrospectiveTemplate = "went_well_to_improve"
 )
 
 type Retrospective struct {

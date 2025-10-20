@@ -3,7 +3,7 @@ CREATE TABLE retrospectives (
     team_id UUID NOT NULL REFERENCES teams(id) ON DELETE CASCADE,
     title VARCHAR(255) NOT NULL,
     description TEXT,
-    template VARCHAR(50) NOT NULL CHECK (template IN ('start_stop_continue', '4ls', 'mad_sad_glad', 'sailboat', 'custom')),
+    template VARCHAR(50) NOT NULL CHECK (template IN ('start_stop_continue', '4ls', 'mad_sad_glad', 'sailboat', 'went_well_to_improve', 'custom')),
     status VARCHAR(50) NOT NULL DEFAULT 'planned' CHECK (status IN ('planned', 'active', 'collecting', 'voting', 'discussing', 'closed')),
     scheduled_at TIMESTAMP WITH TIME ZONE,
     started_at TIMESTAMP WITH TIME ZONE,

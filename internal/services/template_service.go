@@ -158,6 +158,28 @@ func (s *TemplateService) GetAvailableTemplates() []TemplateDefinition {
 				},
 			},
 		},
+		{
+			ID:           "went_well_to_improve",
+			Name:         "Went Well | To Improve",
+			Description:  "O que funcionou bem e o que pode ser melhorado",
+			Instructions: "Avalie o período focando em dois aspectos principais:",
+			Categories: []TemplateCategory{
+				{
+					ID:          "went_well",
+					Name:        "Went Well",
+					Description: "O que funcionou bem?",
+					Color:       "#4CAF50",
+					Icon:        "check_circle",
+				},
+				{
+					ID:          "to_improve",
+					Name:        "To Improve",
+					Description: "O que pode ser melhorado?",
+					Color:       "#FF9800",
+					Icon:        "trending_up",
+				},
+			},
+		},
 	}
 }
 

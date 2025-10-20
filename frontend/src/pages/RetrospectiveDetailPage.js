@@ -865,7 +865,11 @@ ${editingActionItem.feedback}
           )}
 
           {/* Retrospective Items */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className={`grid grid-cols-1 gap-6 ${
+            retrospective?.template === 'went_well_to_improve' 
+              ? 'md:grid-cols-2' 
+              : 'md:grid-cols-2 lg:grid-cols-3'
+          }`}>
         {categories.map((categoryKey) => {
           const categoryInfo = getCategoryInfo(categoryKey);
           const items = itemsByCategory[categoryKey] || [];
