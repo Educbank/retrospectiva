@@ -5,9 +5,10 @@
 # Default target
 help:
 	@echo "Available targets:"
-	@echo "  test          - Run all tests (unit + integration)"
+	@echo "  test          - Run all tests (unit + integration + schema)"
 	@echo "  test-unit     - Run unit tests only"
 	@echo "  test-integration - Run integration tests only"
+	@echo "  test-schema   - Run schema validation tests"
 	@echo "  test-user     - Run user integration tests"
 	@echo "  test-team     - Run team integration tests"
 	@echo "  test-retro    - Run retrospective integration tests"
@@ -59,8 +60,13 @@ test-retro:
 	@echo "Running retrospective integration tests..."
 	@./scripts/run-integration-tests.sh -c retrospective
 
+# Run schema tests
+test-schema:
+	@echo "Running schema tests..."
+	go test ./tests/schema -v
+
 # Run all tests
-test: test-unit test-integration
+test: test-unit test-integration test-schema
 
 # Run benchmarks
 bench:
