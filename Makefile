@@ -1,4 +1,4 @@
-.PHONY: run build clean deps test migrate-up migrate-down run-all setup-db setup check-db docker-db docker-db-start docker-db-stop docker-db-restart help
+.PHONY: run build clean deps test migrate-up migrate-down run-all stop setup-db setup check-db docker-db docker-db-start docker-db-stop docker-db-restart help
 
 # Variáveis
 BINARY_NAME=educ-retro
@@ -7,7 +7,7 @@ DB_URL=postgres://postgres:password@localhost:5432/educ_retro?sslmode=disable
 # Executar o servidor
 run:
 	@echo "🚀 Iniciando servidor..."
-	go run cmd/server/main.go
+	cd backend && go run cmd/server/main.go
 
 # Executar backend e frontend simultaneamente
 run-all:
@@ -17,13 +17,22 @@ run-all:
 	@echo "⏹️  Pressione Ctrl+C para parar ambos"
 	@trap 'kill %1 %2' INT; \
 	(cd frontend && npm start) & \
-	(sleep 5 && go run cmd/server/main.go) & \
+	(sleep 5 && cd backend && go run cmd/server/main.go) & \
 	wait
+
+# Parar aplicação
+stop:
+	@echo "🛑 Parando aplicação..."
+	@echo "🔴 Parando backend (porta 8080)..."
+	@lsof -ti:8080 | xargs kill -9 2>/dev/null || echo "Backend não estava rodando"
+	@echo "🔴 Parando frontend (porta 3000)..."
+	@lsof -ti:3000 | xargs kill -9 2>/dev/null || echo "Frontend não estava rodando"
+	@echo "✅ Aplicação parada!"
 
 # Build para produção
 build:
 	@echo "🔨 Building binary..."
-	go build -o bin/$(BINARY_NAME) cmd/server/main.go
+	cd backend && go build -o bin/$(BINARY_NAME) cmd/server/main.go
 
 # Limpar arquivos gerados
 clean:
@@ -34,57 +43,57 @@ clean:
 # Instalar dependências
 deps:
 	@echo "📦 Instalando dependências..."
-	go mod tidy
-	go mod download
+	cd backend && go mod tidy
+	cd backend && go mod download
 
 # Executar testes
 test:
 	@echo "🧪 Executando testes..."
-	go test ./...
+	cd backend && go test ./...
 
 # Executar testes com coverage
 test-coverage:
 	@echo "🧪 Executando testes com coverage..."
-	go test -coverprofile=coverage.out ./...
-	go tool cover -html=coverage.out -o coverage.html
+	cd backend && go test -coverprofile=coverage.out ./...
+	cd backend && go tool cover -html=coverage.out -o coverage.html
 
 # Executar migrations
 migrate-up:
 	@echo "📈 Executando migrations..."
-	migrate -path migrations -database "$(DB_URL)" up
+	migrate -path backend/migrations -database "$(DB_URL)" up
 
 # Reverter migrations
 migrate-down:
 	@echo "📉 Revertendo migrations..."
-	migrate -path migrations -database "$(DB_URL)" down
+	migrate -path backend/migrations -database "$(DB_URL)" down
 
 # Resetar banco (cuidado!)
 migrate-reset:
 	@echo "⚠️  Resetando banco de dados..."
-	migrate -path migrations -database "$(DB_URL)" down
-	migrate -path migrations -database "$(DB_URL)" up
+	migrate -path backend/migrations -database "$(DB_URL)" down
+	migrate -path backend/migrations -database "$(DB_URL)" up
 
 # Criar nova migration
 migrate-create:
 	@echo "📝 Criando nova migration..."
 	@read -p "Nome da migration: " name; \
-	migrate create -ext sql -dir migrations $$name
+	migrate create -ext sql -dir backend/migrations $$name
 
 # Executar linter
 lint:
 	@echo "🔍 Executando linter..."
-	golangci-lint run
+	cd backend && golangci-lint run
 
 # Formatar código
 fmt:
 	@echo "💅 Formatando código..."
-	go fmt ./...
-	goimports -w .
+	cd backend && go fmt ./...
+	cd backend && goimports -w .
 
 # Gerar documentação da API
 docs:
 	@echo "📚 Gerando documentação..."
-	swag init -g cmd/server/main.go
+	cd backend && swag init -g cmd/server/main.go
 
 # Setup inicial do banco de dados
 setup-db:
@@ -95,7 +104,7 @@ setup-db:
 		echo "⚠️  Por favor, edite o arquivo .env com suas configurações"; \
 	fi
 	@echo "🚀 Executando script de inicialização do banco..."
-	@./scripts/init-db.sh
+	@./backend/scripts/init-db.sh
 
 # Setup completo do projeto
 setup: deps setup-db
@@ -105,7 +114,7 @@ setup: deps setup-db
 # Verificar status do banco
 check-db:
 	@echo "🔍 Verificando status do banco de dados..."
-	@./scripts/init-db.sh --check-only || echo "❌ Banco não está configurado. Execute 'make setup-db'"
+	@./backend/scripts/init-db.sh --check-only || echo "❌ Banco não está configurado. Execute 'make setup-db'"
 
 # Docker PostgreSQL - Iniciar container
 docker-db-start:
@@ -154,6 +163,7 @@ help:
 	@echo "🚀 Execução:"
 	@echo "  run           - Executar o servidor"
 	@echo "  run-all       - Executar backend e frontend simultaneamente"
+	@echo "  stop          - Parar aplicação (backend e frontend)"
 	@echo ""
 	@echo "🐳 Docker PostgreSQL:"
 	@echo "  docker-db-start    - Iniciar PostgreSQL no Docker"
