@@ -11,7 +11,31 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
+
+	_ "educ-retro/docs" // Import generated docs
 )
+
+// @title Educ Retro API
+// @version 1.0
+// @description API para sistema de retrospectivas educacionais
+// @termsOfService http://swagger.io/terms/
+
+// @contact.name API Support
+// @contact.url http://www.swagger.io/support
+// @contact.email support@swagger.io
+
+// @license.name MIT
+// @license.url https://opensource.org/licenses/MIT
+
+// @host localhost:8080
+// @BasePath /api/v1
+
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
+// @description Type "Bearer" followed by a space and JWT token.
 
 func main() {
 	// Load environment variables
@@ -70,6 +94,9 @@ func main() {
 		c.Next()
 	})
 
+	// Swagger documentation
+	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+
 	// API routes
 	v1 := r.Group("/api/v1")
 	{
@@ -95,5 +122,6 @@ func main() {
 	}
 
 	log.Printf("Server starting on port %s", port)
+	log.Printf("Swagger documentation available at: http://localhost:%s/swagger/index.html", port)
 	log.Fatal(r.Run(":" + port))
 }

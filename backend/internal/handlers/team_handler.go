@@ -21,7 +21,7 @@ func NewTeamHandler(teamService *services.TeamService) *TeamHandler {
 // CreateTeam godoc
 // @Summary Create a new team
 // @Description Create a new team with the current user as owner
-// @Tags teams
+// @Tags Teams
 // @Accept json
 // @Produce json
 // @Security BearerAuth
@@ -29,7 +29,7 @@ func NewTeamHandler(teamService *services.TeamService) *TeamHandler {
 // @Success 201 {object} models.Team "Team created successfully"
 // @Failure 400 {object} map[string]string "Invalid input"
 // @Failure 401 {object} map[string]string "Unauthorized"
-// @Router /api/v1/teams [post]
+// @Router /teams [post]
 func (h *TeamHandler) CreateTeam(c *gin.Context) {
 	userID, exists := c.Get("user_id")
 	if !exists {
@@ -55,13 +55,13 @@ func (h *TeamHandler) CreateTeam(c *gin.Context) {
 // GetUserTeams godoc
 // @Summary Get user's teams
 // @Description Get all teams where the current user is a member
-// @Tags teams
+// @Tags Teams
 // @Accept json
 // @Produce json
 // @Security BearerAuth
 // @Success 200 {array} models.Team "User's teams"
 // @Failure 401 {object} map[string]string "Unauthorized"
-// @Router /api/v1/teams [get]
+// @Router /teams [get]
 func (h *TeamHandler) GetUserTeams(c *gin.Context) {
 	userID, exists := c.Get("user_id")
 	if !exists {
@@ -81,7 +81,7 @@ func (h *TeamHandler) GetUserTeams(c *gin.Context) {
 // GetTeam godoc
 // @Summary Get team details
 // @Description Get detailed information about a specific team including members
-// @Tags teams
+// @Tags Teams
 // @Accept json
 // @Produce json
 // @Security BearerAuth
@@ -91,7 +91,7 @@ func (h *TeamHandler) GetUserTeams(c *gin.Context) {
 // @Failure 401 {object} map[string]string "Unauthorized"
 // @Failure 403 {object} map[string]string "Access denied"
 // @Failure 404 {object} map[string]string "Team not found"
-// @Router /api/v1/teams/{id} [get]
+// @Router /teams/{id} [get]
 func (h *TeamHandler) GetTeam(c *gin.Context) {
 	userID, exists := c.Get("user_id")
 	if !exists {
@@ -124,7 +124,7 @@ func (h *TeamHandler) GetTeam(c *gin.Context) {
 // UpdateTeam godoc
 // @Summary Update team
 // @Description Update team information (only team owner can update)
-// @Tags teams
+// @Tags Teams
 // @Accept json
 // @Produce json
 // @Security BearerAuth
@@ -134,7 +134,7 @@ func (h *TeamHandler) GetTeam(c *gin.Context) {
 // @Failure 400 {object} map[string]string "Invalid input"
 // @Failure 401 {object} map[string]string "Unauthorized"
 // @Failure 403 {object} map[string]string "Access denied"
-// @Router /api/v1/teams/{id} [put]
+// @Router /teams/{id} [put]
 func (h *TeamHandler) UpdateTeam(c *gin.Context) {
 	userID, exists := c.Get("user_id")
 	if !exists {
@@ -171,7 +171,7 @@ func (h *TeamHandler) UpdateTeam(c *gin.Context) {
 // DeleteTeam godoc
 // @Summary Delete team
 // @Description Delete a team (only team owner can delete)
-// @Tags teams
+// @Tags Teams
 // @Accept json
 // @Produce json
 // @Security BearerAuth
@@ -180,7 +180,7 @@ func (h *TeamHandler) UpdateTeam(c *gin.Context) {
 // @Failure 400 {object} map[string]string "Invalid team ID"
 // @Failure 401 {object} map[string]string "Unauthorized"
 // @Failure 403 {object} map[string]string "Access denied"
-// @Router /api/v1/teams/{id} [delete]
+// @Router /teams/{id} [delete]
 func (h *TeamHandler) DeleteTeam(c *gin.Context) {
 	userID, exists := c.Get("user_id")
 	if !exists {
@@ -211,7 +211,7 @@ func (h *TeamHandler) DeleteTeam(c *gin.Context) {
 // AddMember godoc
 // @Summary Add team member
 // @Description Add a new member to the team
-// @Tags teams
+// @Tags Teams
 // @Accept json
 // @Produce json
 // @Security BearerAuth
@@ -221,7 +221,7 @@ func (h *TeamHandler) DeleteTeam(c *gin.Context) {
 // @Failure 400 {object} map[string]string "Invalid input"
 // @Failure 401 {object} map[string]string "Unauthorized"
 // @Failure 403 {object} map[string]string "Access denied"
-// @Router /api/v1/teams/{id}/members [post]
+// @Router /teams/{id}/members [post]
 func (h *TeamHandler) AddMember(c *gin.Context) {
 	userID, exists := c.Get("user_id")
 	if !exists {
@@ -258,7 +258,7 @@ func (h *TeamHandler) AddMember(c *gin.Context) {
 // RemoveMember godoc
 // @Summary Remove team member
 // @Description Remove a member from the team
-// @Tags teams
+// @Tags Teams
 // @Accept json
 // @Produce json
 // @Security BearerAuth
@@ -268,7 +268,7 @@ func (h *TeamHandler) AddMember(c *gin.Context) {
 // @Failure 400 {object} map[string]string "Invalid input"
 // @Failure 401 {object} map[string]string "Unauthorized"
 // @Failure 403 {object} map[string]string "Access denied"
-// @Router /api/v1/teams/{id}/members/{userId} [delete]
+// @Router /teams/{id}/members/{userId} [delete]
 func (h *TeamHandler) RemoveMember(c *gin.Context) {
 	userID, exists := c.Get("user_id")
 	if !exists {

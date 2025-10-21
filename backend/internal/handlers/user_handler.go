@@ -20,15 +20,15 @@ func NewUserHandler(userService *services.UserService) *UserHandler {
 
 // Register godoc
 // @Summary Register a new user
-// @Description Create a new user account
-// @Tags users
+// @Description Create a new user account with email, name and password
+// @Tags Authentication
 // @Accept json
 // @Produce json
 // @Param user body models.UserCreateRequest true "User registration data"
 // @Success 201 {object} map[string]interface{} "User created successfully"
 // @Failure 400 {object} map[string]string "Invalid input"
 // @Failure 409 {object} map[string]string "User already exists"
-// @Router /api/v1/auth/register [post]
+// @Router /auth/register [post]
 func (h *UserHandler) Register(c *gin.Context) {
 	var req models.UserCreateRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -54,15 +54,15 @@ func (h *UserHandler) Register(c *gin.Context) {
 
 // Login godoc
 // @Summary Login user
-// @Description Authenticate user and return JWT token
-// @Tags users
+// @Description Authenticate user with email and password, return JWT token
+// @Tags Authentication
 // @Accept json
 // @Produce json
 // @Param credentials body models.UserLoginRequest true "Login credentials"
 // @Success 200 {object} map[string]interface{} "Login successful"
 // @Failure 400 {object} map[string]string "Invalid input"
 // @Failure 401 {object} map[string]string "Invalid credentials"
-// @Router /api/v1/auth/login [post]
+// @Router /auth/login [post]
 func (h *UserHandler) Login(c *gin.Context) {
 	var req models.UserLoginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -85,14 +85,14 @@ func (h *UserHandler) Login(c *gin.Context) {
 // GetProfile godoc
 // @Summary Get user profile
 // @Description Get current user's profile information
-// @Tags users
+// @Tags Users
 // @Accept json
 // @Produce json
 // @Security BearerAuth
 // @Success 200 {object} models.UserResponse "User profile"
 // @Failure 401 {object} map[string]string "Unauthorized"
 // @Failure 404 {object} map[string]string "User not found"
-// @Router /api/v1/users/profile [get]
+// @Router /users/profile [get]
 func (h *UserHandler) GetProfile(c *gin.Context) {
 	userID, exists := c.Get("user_id")
 	if !exists {
@@ -111,17 +111,17 @@ func (h *UserHandler) GetProfile(c *gin.Context) {
 
 // UpdateProfile godoc
 // @Summary Update user profile
-// @Description Update current user's profile information
-// @Tags users
+// @Description Update current user's profile information (name and avatar)
+// @Tags Users
 // @Accept json
 // @Produce json
 // @Security BearerAuth
-// @Param profile body map[string]string true "Profile update data"
+// @Param profile body object{name=string,avatar=string} true "Profile update data"
 // @Success 200 {object} models.UserResponse "Updated user profile"
 // @Failure 400 {object} map[string]string "Invalid input"
 // @Failure 401 {object} map[string]string "Unauthorized"
 // @Failure 404 {object} map[string]string "User not found"
-// @Router /api/v1/users/profile [put]
+// @Router /users/profile [put]
 func (h *UserHandler) UpdateProfile(c *gin.Context) {
 	userID, exists := c.Get("user_id")
 	if !exists {

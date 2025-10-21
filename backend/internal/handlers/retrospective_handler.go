@@ -25,7 +25,7 @@ func NewRetrospectiveHandler(retrospectiveService *services.RetrospectiveService
 // CreateRetrospective godoc
 // @Summary Create a new retrospective
 // @Description Create a new retrospective for a team
-// @Tags retrospectives
+// @Tags Retrospectives
 // @Accept json
 // @Produce json
 // @Security BearerAuth
@@ -34,7 +34,7 @@ func NewRetrospectiveHandler(retrospectiveService *services.RetrospectiveService
 // @Failure 400 {object} map[string]string "Invalid input"
 // @Failure 401 {object} map[string]string "Unauthorized"
 // @Failure 403 {object} map[string]string "Access denied"
-// @Router /api/v1/retrospectives [post]
+// @Router /retrospectives [post]
 func (h *RetrospectiveHandler) CreateRetrospective(c *gin.Context) {
 	userID, exists := c.Get("user_id")
 	if !exists {
@@ -64,13 +64,13 @@ func (h *RetrospectiveHandler) CreateRetrospective(c *gin.Context) {
 // GetUserRetrospectives godoc
 // @Summary Get user's retrospectives
 // @Description Get all retrospectives where the current user is a team member
-// @Tags retrospectives
+// @Tags Retrospectives
 // @Accept json
 // @Produce json
 // @Security BearerAuth
 // @Success 200 {array} models.Retrospective "User's retrospectives"
 // @Failure 401 {object} map[string]string "Unauthorized"
-// @Router /api/v1/retrospectives [get]
+// @Router /retrospectives [get]
 func (h *RetrospectiveHandler) GetUserRetrospectives(c *gin.Context) {
 	userID, exists := c.Get("user_id")
 	if !exists {
@@ -90,7 +90,7 @@ func (h *RetrospectiveHandler) GetUserRetrospectives(c *gin.Context) {
 // GetRetrospective godoc
 // @Summary Get retrospective details
 // @Description Get detailed information about a specific retrospective
-// @Tags retrospectives
+// @Tags Retrospectives
 // @Accept json
 // @Produce json
 // @Security BearerAuth
@@ -100,7 +100,7 @@ func (h *RetrospectiveHandler) GetUserRetrospectives(c *gin.Context) {
 // @Failure 401 {object} map[string]string "Unauthorized"
 // @Failure 403 {object} map[string]string "Access denied"
 // @Failure 404 {object} map[string]string "Retrospective not found"
-// @Router /api/v1/retrospectives/{id} [get]
+// @Router /retrospectives/{id} [get]
 func (h *RetrospectiveHandler) GetRetrospective(c *gin.Context) {
 	userID, exists := c.Get("user_id")
 	if !exists {
@@ -131,7 +131,7 @@ func (h *RetrospectiveHandler) GetRetrospective(c *gin.Context) {
 // UpdateRetrospective godoc
 // @Summary Update retrospective
 // @Description Update retrospective information
-// @Tags retrospectives
+// @Tags Retrospectives
 // @Accept json
 // @Produce json
 // @Security BearerAuth
@@ -141,7 +141,7 @@ func (h *RetrospectiveHandler) GetRetrospective(c *gin.Context) {
 // @Failure 400 {object} map[string]string "Invalid input"
 // @Failure 401 {object} map[string]string "Unauthorized"
 // @Failure 403 {object} map[string]string "Access denied"
-// @Router /api/v1/retrospectives/{id} [put]
+// @Router /retrospectives/{id} [put]
 func (h *RetrospectiveHandler) UpdateRetrospective(c *gin.Context) {
 	userID, exists := c.Get("user_id")
 	if !exists {
@@ -178,7 +178,7 @@ func (h *RetrospectiveHandler) UpdateRetrospective(c *gin.Context) {
 // DeleteRetrospective godoc
 // @Summary Delete retrospective
 // @Description Delete a retrospective
-// @Tags retrospectives
+// @Tags Retrospectives
 // @Accept json
 // @Produce json
 // @Security BearerAuth
@@ -187,7 +187,7 @@ func (h *RetrospectiveHandler) UpdateRetrospective(c *gin.Context) {
 // @Failure 400 {object} map[string]string "Invalid retrospective ID"
 // @Failure 401 {object} map[string]string "Unauthorized"
 // @Failure 403 {object} map[string]string "Access denied"
-// @Router /api/v1/retrospectives/{id} [delete]
+// @Router /retrospectives/{id} [delete]
 func (h *RetrospectiveHandler) DeleteRetrospective(c *gin.Context) {
 	userID, exists := c.Get("user_id")
 	if !exists {
@@ -220,7 +220,7 @@ func (h *RetrospectiveHandler) DeleteRetrospective(c *gin.Context) {
 // StartRetrospective godoc
 // @Summary Start retrospective
 // @Description Start a retrospective session
-// @Tags retrospectives
+// @Tags Retrospectives
 // @Accept json
 // @Produce json
 // @Security BearerAuth
@@ -229,7 +229,7 @@ func (h *RetrospectiveHandler) DeleteRetrospective(c *gin.Context) {
 // @Failure 400 {object} map[string]string "Invalid retrospective ID"
 // @Failure 401 {object} map[string]string "Unauthorized"
 // @Failure 403 {object} map[string]string "Access denied"
-// @Router /api/v1/retrospectives/{id}/start [post]
+// @Router /retrospectives/{id}/start [post]
 func (h *RetrospectiveHandler) StartRetrospective(c *gin.Context) {
 	userID, exists := c.Get("user_id")
 	if !exists {
@@ -260,7 +260,7 @@ func (h *RetrospectiveHandler) StartRetrospective(c *gin.Context) {
 // EndRetrospective godoc
 // @Summary End retrospective
 // @Description End a retrospective session
-// @Tags retrospectives
+// @Tags Retrospectives
 // @Accept json
 // @Produce json
 // @Security BearerAuth
@@ -269,7 +269,7 @@ func (h *RetrospectiveHandler) StartRetrospective(c *gin.Context) {
 // @Failure 400 {object} map[string]string "Invalid retrospective ID"
 // @Failure 401 {object} map[string]string "Unauthorized"
 // @Failure 403 {object} map[string]string "Access denied"
-// @Router /api/v1/retrospectives/{id}/end [post]
+// @Router /retrospectives/{id}/end [post]
 func (h *RetrospectiveHandler) EndRetrospective(c *gin.Context) {
 	userID, exists := c.Get("user_id")
 	if !exists {
