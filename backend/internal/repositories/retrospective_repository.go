@@ -894,6 +894,17 @@ func (r *RetrospectiveRepository) DeleteActionItem(actionItemID uuid.UUID) error
 	return err
 }
 
+// ReopenRetrospective reopens a closed retrospective
+func (r *RetrospectiveRepository) ReopenRetrospective(id uuid.UUID) error {
+	query := `
+		UPDATE retrospectives 
+		SET status = $2, updated_at = NOW()
+		WHERE id = $1
+	`
+	_, err := r.db.Exec(query, id, models.RetroStatusActive)
+	return err
+}
+
 // UpdateTimer updates the timer fields for a retrospective
 func (r *RetrospectiveRepository) UpdateTimer(retrospectiveID uuid.UUID, req models.TimerUpdateRequest) error {
 	query := "UPDATE retrospectives SET updated_at = NOW()"

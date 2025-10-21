@@ -316,6 +316,8 @@ func (h *RetrospectiveHandler) ReopenRetrospective(c *gin.Context) {
 		status := http.StatusInternalServerError
 		if err.Error() == "access denied" {
 			status = http.StatusForbidden
+		} else if err.Error() == "retrospective is not closed" {
+			status = http.StatusBadRequest
 		}
 		c.JSON(status, gin.H{"error": err.Error()})
 		return

@@ -11,11 +11,11 @@ import (
 )
 
 type RetrospectiveService struct {
-	retroRepo *repositories.RetrospectiveRepository
-	teamRepo  *repositories.TeamRepository
+	retroRepo repositories.RetrospectiveRepositoryInterface
+	teamRepo  repositories.TeamRepositoryInterface
 }
 
-func NewRetrospectiveService(retroRepo *repositories.RetrospectiveRepository, teamRepo *repositories.TeamRepository) *RetrospectiveService {
+func NewRetrospectiveService(retroRepo repositories.RetrospectiveRepositoryInterface, teamRepo repositories.TeamRepositoryInterface) *RetrospectiveService {
 	return &RetrospectiveService{
 		retroRepo: retroRepo,
 		teamRepo:  teamRepo,
@@ -279,9 +279,7 @@ func (s *RetrospectiveService) ReopenRetrospective(retrospectiveID, userID uuid.
 		return errors.New("retrospective is not closed")
 	}
 
-	// Update status to active
-	retrospective.Status = models.RetroStatusActive
-	return s.retroRepo.Update(retrospective)
+	return s.retroRepo.ReopenRetrospective(retrospectiveID)
 }
 
 // Group methods
@@ -388,12 +386,7 @@ func (s *RetrospectiveService) MergeItems(sourceItemID, targetItemID, userID uui
 	}
 
 	// Merge items
-	mergedItem, err := s.retroRepo.MergeItems(sourceItemID, targetItemID)
-	if err != nil {
-		return nil, err
-	}
-
-	return mergedItem, nil
+	return s.retroRepo.MergeItems(sourceItemID, targetItemID)
 }
 
 // Action Item methods
