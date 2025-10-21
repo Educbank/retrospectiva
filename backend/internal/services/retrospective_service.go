@@ -248,7 +248,36 @@ func (s *RetrospectiveService) GetRetrospectiveWithDetails(retrospectiveID, user
 }
 
 func (s *RetrospectiveService) RegisterParticipant(retrospectiveID, userID uuid.UUID) error {
-	return s.retroRepo.RegisterParticipant(retrospectiveID, userID)
+	// First, register the participant
+	err := s.retroRepo.RegisterParticipant(retrospectiveID, userID)
+	if err != nil {
+		return err
+	}
+
+	// Check if retrospective should be started automatically
+	retrospective, err := s.retroRepo.GetByID(retrospectiveID)
+	if err != nil {
+		return err
+	}
+
+	// Only auto-start if retrospective is in "planned" status
+	if retrospective.Status == models.RetroStatusPlanned {
+		// Get current participant count
+		participants, err := s.retroRepo.GetParticipants(retrospectiveID)
+		if err != nil {
+			return err
+		}
+
+		// If there's at least 2 participants, start the retrospective automatically
+		if len(participants) > 1 {
+			err = s.retroRepo.UpdateStatus(retrospectiveID, models.RetroStatusActive)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
 }
 
 func (s *RetrospectiveService) GetParticipants(retrospectiveID uuid.UUID) ([]models.RetrospectiveParticipant, error) {
@@ -461,20 +490,4 @@ func (s *RetrospectiveService) DeleteActionItem(actionItemID, userID uuid.UUID) 
 	}
 
 	return s.retroRepo.DeleteActionItem(actionItemID)
-}
-
-// UpdateTimer updates the timer for a retrospective
-func (s *RetrospectiveService) UpdateTimer(retrospectiveID uuid.UUID, userID uuid.UUID, req models.TimerUpdateRequest) error {
-	// Get retrospective to check permissions
-	retrospective, err := s.retroRepo.GetByID(retrospectiveID)
-	if err != nil {
-		return err
-	}
-
-	// Only creator of retrospective can update timer
-	if retrospective.CreatedBy != userID {
-		return errors.New("access denied")
-	}
-
-	return s.retroRepo.UpdateTimer(retrospectiveID, req)
 }

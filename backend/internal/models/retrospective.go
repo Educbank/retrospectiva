@@ -28,22 +28,18 @@ const (
 )
 
 type Retrospective struct {
-	ID               uuid.UUID             `json:"id" db:"id"`
-	TeamID           uuid.UUID             `json:"team_id" db:"team_id"`
-	Title            string                `json:"title" db:"title"`
-	Description      *string               `json:"description" db:"description"`
-	Template         RetrospectiveTemplate `json:"template" db:"template"`
-	Status           RetrospectiveStatus   `json:"status" db:"status"`
-	ScheduledAt      *time.Time            `json:"scheduled_at" db:"scheduled_at"`
-	StartedAt        *time.Time            `json:"started_at" db:"started_at"`
-	EndedAt          *time.Time            `json:"ended_at" db:"ended_at"`
-	TimerDuration    int                   `json:"timer_duration" db:"timer_duration"`         // Timer duration in seconds
-	TimerStartedAt   *time.Time            `json:"timer_started_at" db:"timer_started_at"`     // When timer was started
-	TimerPausedAt    *time.Time            `json:"timer_paused_at" db:"timer_paused_at"`       // When timer was paused
-	TimerElapsedTime int                   `json:"timer_elapsed_time" db:"timer_elapsed_time"` // Total elapsed time in seconds
-	CreatedBy        uuid.UUID             `json:"created_by" db:"created_by"`
-	CreatedAt        time.Time             `json:"created_at" db:"created_at"`
-	UpdatedAt        time.Time             `json:"updated_at" db:"updated_at"`
+	ID          uuid.UUID             `json:"id" db:"id"`
+	TeamID      uuid.UUID             `json:"team_id" db:"team_id"`
+	Title       string                `json:"title" db:"title"`
+	Description *string               `json:"description" db:"description"`
+	Template    RetrospectiveTemplate `json:"template" db:"template"`
+	Status      RetrospectiveStatus   `json:"status" db:"status"`
+	ScheduledAt *time.Time            `json:"scheduled_at" db:"scheduled_at"`
+	StartedAt   *time.Time            `json:"started_at" db:"started_at"`
+	EndedAt     *time.Time            `json:"ended_at" db:"ended_at"`
+	CreatedBy   uuid.UUID             `json:"created_by" db:"created_by"`
+	CreatedAt   time.Time             `json:"created_at" db:"created_at"`
+	UpdatedAt   time.Time             `json:"updated_at" db:"updated_at"`
 }
 
 type RetrospectiveItem struct {
@@ -147,13 +143,6 @@ type GroupVoteRequest struct {
 type MergeItemsRequest struct {
 	SourceItemID string `json:"source_item_id" binding:"required"`
 	TargetItemID string `json:"target_item_id" binding:"required"`
-}
-
-type TimerUpdateRequest struct {
-	Duration    *int       `json:"duration"`     // Timer duration in seconds
-	StartedAt   *time.Time `json:"started_at"`   // When timer was started
-	PausedAt    *time.Time `json:"paused_at"`    // When timer was paused
-	ElapsedTime *int       `json:"elapsed_time"` // Total elapsed time in seconds
 }
 
 type RetrospectiveWithDetails struct {

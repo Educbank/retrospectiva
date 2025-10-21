@@ -95,7 +95,6 @@ export const retrospectivesAPI = {
   voteGroup: (groupId) => api.post(`/retrospectives/groups/${groupId}/vote`),
   deleteGroup: (groupId) => api.delete(`/retrospectives/groups/${groupId}`),
   mergeItems: (id, data) => api.post(`/retrospectives/${id}/merge-items`, data),
-  updateTimer: (id, data) => api.put(`/retrospectives/${id}/timer`, data),
   toggleBlur: (id, blurred) => api.put(`/retrospectives/${id}/blur`, { blurred }),
 };
 

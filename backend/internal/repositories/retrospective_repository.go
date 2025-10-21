@@ -42,7 +42,6 @@ func (r *RetrospectiveRepository) Create(retrospective *models.Retrospective) er
 func (r *RetrospectiveRepository) GetByID(id uuid.UUID) (*models.Retrospective, error) {
 	query := `
 		SELECT id, team_id, title, description, template, status, scheduled_at, started_at, ended_at, 
-		       timer_duration, timer_started_at, timer_paused_at, timer_elapsed_time,
 		       created_by, created_at, updated_at
 		FROM retrospectives WHERE id = $1
 	`
@@ -58,10 +57,6 @@ func (r *RetrospectiveRepository) GetByID(id uuid.UUID) (*models.Retrospective, 
 		&retrospective.ScheduledAt,
 		&retrospective.StartedAt,
 		&retrospective.EndedAt,
-		&retrospective.TimerDuration,
-		&retrospective.TimerStartedAt,
-		&retrospective.TimerPausedAt,
-		&retrospective.TimerElapsedTime,
 		&retrospective.CreatedBy,
 		&retrospective.CreatedAt,
 		&retrospective.UpdatedAt,
@@ -77,7 +72,6 @@ func (r *RetrospectiveRepository) GetByID(id uuid.UUID) (*models.Retrospective, 
 func (r *RetrospectiveRepository) GetByTeamID(teamID uuid.UUID) ([]models.Retrospective, error) {
 	query := `
 		SELECT id, team_id, title, description, template, status, scheduled_at, started_at, ended_at, 
-		       timer_duration, timer_started_at, timer_paused_at, timer_elapsed_time,
 		       created_by, created_at, updated_at
 		FROM retrospectives 
 		WHERE team_id = $1
@@ -103,10 +97,6 @@ func (r *RetrospectiveRepository) GetByTeamID(teamID uuid.UUID) ([]models.Retros
 			&retrospective.ScheduledAt,
 			&retrospective.StartedAt,
 			&retrospective.EndedAt,
-			&retrospective.TimerDuration,
-			&retrospective.TimerStartedAt,
-			&retrospective.TimerPausedAt,
-			&retrospective.TimerElapsedTime,
 			&retrospective.CreatedBy,
 			&retrospective.CreatedAt,
 			&retrospective.UpdatedAt,
@@ -123,7 +113,6 @@ func (r *RetrospectiveRepository) GetByTeamID(teamID uuid.UUID) ([]models.Retros
 func (r *RetrospectiveRepository) GetByUserID(userID uuid.UUID) ([]models.Retrospective, error) {
 	query := `
 		SELECT id, team_id, title, description, template, status, scheduled_at, started_at, ended_at, 
-		       timer_duration, timer_started_at, timer_paused_at, timer_elapsed_time,
 		       created_by, created_at, updated_at
 		FROM retrospectives
 		WHERE created_by = $1
@@ -149,10 +138,6 @@ func (r *RetrospectiveRepository) GetByUserID(userID uuid.UUID) ([]models.Retros
 			&retrospective.ScheduledAt,
 			&retrospective.StartedAt,
 			&retrospective.EndedAt,
-			&retrospective.TimerDuration,
-			&retrospective.TimerStartedAt,
-			&retrospective.TimerPausedAt,
-			&retrospective.TimerElapsedTime,
 			&retrospective.CreatedBy,
 			&retrospective.CreatedAt,
 			&retrospective.UpdatedAt,
@@ -169,7 +154,6 @@ func (r *RetrospectiveRepository) GetByUserID(userID uuid.UUID) ([]models.Retros
 func (r *RetrospectiveRepository) GetAllRetrospectives() ([]models.Retrospective, error) {
 	query := `
 		SELECT id, team_id, title, description, template, status, scheduled_at, started_at, ended_at, 
-		       timer_duration, timer_started_at, timer_paused_at, timer_elapsed_time,
 		       created_by, created_at, updated_at
 		FROM retrospectives
 		ORDER BY created_at DESC
@@ -194,10 +178,6 @@ func (r *RetrospectiveRepository) GetAllRetrospectives() ([]models.Retrospective
 			&retrospective.ScheduledAt,
 			&retrospective.StartedAt,
 			&retrospective.EndedAt,
-			&retrospective.TimerDuration,
-			&retrospective.TimerStartedAt,
-			&retrospective.TimerPausedAt,
-			&retrospective.TimerElapsedTime,
 			&retrospective.CreatedBy,
 			&retrospective.CreatedAt,
 			&retrospective.UpdatedAt,
@@ -903,45 +883,4 @@ func (r *RetrospectiveRepository) ReopenRetrospective(id uuid.UUID) error {
 	`
 	_, err := r.db.Exec(query, id, models.RetroStatusActive)
 	return err
-}
-
-// UpdateTimer updates the timer fields for a retrospective
-func (r *RetrospectiveRepository) UpdateTimer(retrospectiveID uuid.UUID, req models.TimerUpdateRequest) error {
-	query := "UPDATE retrospectives SET updated_at = NOW()"
-	args := []interface{}{}
-	argIndex := 1
-
-	if req.Duration != nil {
-		query += fmt.Sprintf(", timer_duration = $%d", argIndex)
-		args = append(args, *req.Duration)
-		argIndex++
-	}
-
-	if req.StartedAt != nil {
-		query += fmt.Sprintf(", timer_started_at = $%d", argIndex)
-		args = append(args, *req.StartedAt)
-		argIndex++
-	}
-
-	if req.PausedAt != nil {
-		query += fmt.Sprintf(", timer_paused_at = $%d", argIndex)
-		args = append(args, *req.PausedAt)
-		argIndex++
-	}
-
-	if req.ElapsedTime != nil {
-		query += fmt.Sprintf(", timer_elapsed_time = $%d", argIndex)
-		args = append(args, *req.ElapsedTime)
-		argIndex++
-	}
-
-	query += fmt.Sprintf(" WHERE id = $%d", argIndex)
-	args = append(args, retrospectiveID)
-
-	_, err := r.db.Exec(query, args...)
-	if err != nil {
-		return fmt.Errorf("failed to update timer: %w", err)
-	}
-
-	return nil
 }

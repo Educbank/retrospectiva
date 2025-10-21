@@ -832,42 +832,8 @@ func (h *RetrospectiveHandler) SetupRoutes(r *gin.RouterGroup) {
 		retrospectives.GET("/:id/participants", h.GetParticipants)
 		retrospectives.POST("/:id/groups", h.CreateGroup)
 		retrospectives.POST("/:id/merge-items", h.MergeItems)
-		retrospectives.PUT("/:id/timer", h.UpdateTimer)
 		retrospectives.PUT("/:id/blur", h.ToggleBlur)
 	}
-}
-
-// UpdateTimer handles timer updates for a retrospective
-func (h *RetrospectiveHandler) UpdateTimer(c *gin.Context) {
-	retrospectiveIDStr := c.Param("id")
-	retrospectiveID, err := uuid.Parse(retrospectiveIDStr)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid retrospective ID"})
-		return
-	}
-
-	userID, exists := c.Get("user_id")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "user not authenticated"})
-		return
-	}
-
-	var req models.TimerUpdateRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	err = h.retrospectiveService.UpdateTimer(retrospectiveID, userID.(uuid.UUID), req)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-
-	// Broadcast timer update to all participants
-	h.realtimeService.BroadcastToRetrospective(retrospectiveID, "timer_updated", req)
-
-	c.JSON(http.StatusOK, gin.H{"message": "Timer updated successfully"})
 }
 
 // ToggleBlur handles blur toggle for a retrospective

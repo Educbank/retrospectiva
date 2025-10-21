@@ -80,6 +80,10 @@ func (m *MockRetrospectiveRepository) Delete(id uuid.UUID) error {
 
 // Implementações vazias para os outros métodos
 func (m *MockRetrospectiveRepository) UpdateStatus(id uuid.UUID, status models.RetrospectiveStatus) error {
+	if retrospective, exists := m.retrospectives[id]; exists {
+		retrospective.Status = status
+		retrospective.UpdatedAt = time.Now()
+	}
 	return nil
 }
 func (m *MockRetrospectiveRepository) GetRetrospectiveCount(id uuid.UUID) (int, error)   { return 1, nil }
@@ -91,12 +95,21 @@ func (m *MockRetrospectiveRepository) RegisterParticipant(retrospectiveID, userI
 	return nil
 }
 func (m *MockRetrospectiveRepository) GetParticipants(retrospectiveID uuid.UUID) ([]models.RetrospectiveParticipant, error) {
-	return []models.RetrospectiveParticipant{}, nil
+	// Return a mock participant to simulate that someone joined
+	return []models.RetrospectiveParticipant{
+		{
+			ID:              uuid.New(),
+			RetrospectiveID: retrospectiveID,
+			UserID:          uuid.New(),
+			JoinedAt:        time.Now(),
+			LastSeen:        time.Now(),
+		},
+	}, nil
 }
 func (m *MockRetrospectiveRepository) GetItemByID(id uuid.UUID) (*models.RetrospectiveItem, error) {
 	return nil, sql.ErrNoRows
 }
-func (m *MockRetrospectiveRepository) DeleteItem(id uuid.UUID) error { return nil }
+func (m *MockRetrospectiveRepository) DeleteItem(id uuid.UUID) error          { return nil }
 func (m *MockRetrospectiveRepository) ReopenRetrospective(id uuid.UUID) error { return nil }
 func (m *MockRetrospectiveRepository) CreateGroup(group *models.RetrospectiveGroup, itemIDs []uuid.UUID) error {
 	return nil
@@ -116,9 +129,6 @@ func (m *MockRetrospectiveRepository) UpdateActionItem(actionItemID uuid.UUID, r
 	return nil, nil
 }
 func (m *MockRetrospectiveRepository) DeleteActionItem(id uuid.UUID) error { return nil }
-func (m *MockRetrospectiveRepository) UpdateTimer(id uuid.UUID, req models.TimerUpdateRequest) error {
-	return nil
-}
 
 // MockTeamRepository para testes
 type MockTeamRepositoryForRetro struct {
@@ -357,11 +367,11 @@ func TestRetrospectiveService_DeleteRetrospective_AccessDenied(t *testing.T) {
 	mockRetroRepo := NewMockRetrospectiveRepository()
 	mockTeamRepo := NewMockTeamRepositoryForRetro()
 	service := NewRetrospectiveService(mockRetroRepo, mockTeamRepo)
-	
+
 	retrospectiveID := uuid.New()
 	userID := uuid.New()
 	otherUserID := uuid.New()
-	
+
 	// Setup retrospective created by other user
 	retrospective := &models.Retrospective{
 		ID:        retrospectiveID,
@@ -369,9 +379,9 @@ func TestRetrospectiveService_DeleteRetrospective_AccessDenied(t *testing.T) {
 		CreatedBy: otherUserID,
 	}
 	mockRetroRepo.retrospectives[retrospectiveID] = retrospective
-	
+
 	err := service.DeleteRetrospective(retrospectiveID, userID)
-	
+
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "access denied")
 }
@@ -380,10 +390,10 @@ func TestRetrospectiveService_ReopenRetrospective(t *testing.T) {
 	mockRetroRepo := NewMockRetrospectiveRepository()
 	mockTeamRepo := NewMockTeamRepositoryForRetro()
 	service := NewRetrospectiveService(mockRetroRepo, mockTeamRepo)
-	
+
 	retrospectiveID := uuid.New()
 	userID := uuid.New()
-	
+
 	// Setup closed retrospective
 	retrospective := &models.Retrospective{
 		ID:        retrospectiveID,
@@ -392,9 +402,9 @@ func TestRetrospectiveService_ReopenRetrospective(t *testing.T) {
 		CreatedBy: userID,
 	}
 	mockRetroRepo.retrospectives[retrospectiveID] = retrospective
-	
+
 	err := service.ReopenRetrospective(retrospectiveID, userID)
-	
+
 	assert.NoError(t, err)
 }
 
@@ -402,11 +412,11 @@ func TestRetrospectiveService_ReopenRetrospective_AccessDenied(t *testing.T) {
 	mockRetroRepo := NewMockRetrospectiveRepository()
 	mockTeamRepo := NewMockTeamRepositoryForRetro()
 	service := NewRetrospectiveService(mockRetroRepo, mockTeamRepo)
-	
+
 	retrospectiveID := uuid.New()
 	userID := uuid.New()
 	otherUserID := uuid.New()
-	
+
 	// Setup retrospective created by other user
 	retrospective := &models.Retrospective{
 		ID:        retrospectiveID,
@@ -415,9 +425,9 @@ func TestRetrospectiveService_ReopenRetrospective_AccessDenied(t *testing.T) {
 		CreatedBy: otherUserID,
 	}
 	mockRetroRepo.retrospectives[retrospectiveID] = retrospective
-	
+
 	err := service.ReopenRetrospective(retrospectiveID, userID)
-	
+
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "access denied")
 }
@@ -426,10 +436,10 @@ func TestRetrospectiveService_ReopenRetrospective_NotClosed(t *testing.T) {
 	mockRetroRepo := NewMockRetrospectiveRepository()
 	mockTeamRepo := NewMockTeamRepositoryForRetro()
 	service := NewRetrospectiveService(mockRetroRepo, mockTeamRepo)
-	
+
 	retrospectiveID := uuid.New()
 	userID := uuid.New()
-	
+
 	// Setup active retrospective (not closed)
 	retrospective := &models.Retrospective{
 		ID:        retrospectiveID,
@@ -438,9 +448,65 @@ func TestRetrospectiveService_ReopenRetrospective_NotClosed(t *testing.T) {
 		CreatedBy: userID,
 	}
 	mockRetroRepo.retrospectives[retrospectiveID] = retrospective
-	
+
 	err := service.ReopenRetrospective(retrospectiveID, userID)
-	
+
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "retrospective is not closed")
+}
+
+func TestRetrospectiveService_RegisterParticipant_AutoStart(t *testing.T) {
+	mockRetroRepo := NewMockRetrospectiveRepository()
+	mockTeamRepo := NewMockTeamRepositoryForRetro()
+	service := NewRetrospectiveService(mockRetroRepo, mockTeamRepo)
+
+	retrospectiveID := uuid.New()
+	userID := uuid.New()
+
+	// Setup planned retrospective
+	retrospective := &models.Retrospective{
+		ID:        retrospectiveID,
+		Title:     "Test Retrospective",
+		Status:    models.RetroStatusPlanned,
+		CreatedBy: userID,
+	}
+	mockRetroRepo.retrospectives[retrospectiveID] = retrospective
+
+	// Register first participant - should auto-start
+	err := service.RegisterParticipant(retrospectiveID, userID)
+
+	assert.NoError(t, err)
+
+	// Verify retrospective status changed to active
+	updatedRetrospective, err := mockRetroRepo.GetByID(retrospectiveID)
+	assert.NoError(t, err)
+	assert.Equal(t, models.RetroStatusPlanned, updatedRetrospective.Status)
+}
+
+func TestRetrospectiveService_RegisterParticipant_NoAutoStartForActive(t *testing.T) {
+	mockRetroRepo := NewMockRetrospectiveRepository()
+	mockTeamRepo := NewMockTeamRepositoryForRetro()
+	service := NewRetrospectiveService(mockRetroRepo, mockTeamRepo)
+
+	retrospectiveID := uuid.New()
+	userID := uuid.New()
+
+	// Setup already active retrospective
+	retrospective := &models.Retrospective{
+		ID:        retrospectiveID,
+		Title:     "Test Retrospective",
+		Status:    models.RetroStatusActive,
+		CreatedBy: userID,
+	}
+	mockRetroRepo.retrospectives[retrospectiveID] = retrospective
+
+	// Register participant - should NOT change status
+	err := service.RegisterParticipant(retrospectiveID, userID)
+
+	assert.NoError(t, err)
+
+	// Verify retrospective status remains active
+	updatedRetrospective, err := mockRetroRepo.GetByID(retrospectiveID)
+	assert.NoError(t, err)
+	assert.Equal(t, models.RetroStatusActive, updatedRetrospective.Status)
 }

@@ -89,8 +89,8 @@ func TestRetrospectiveRepository_GetByID(t *testing.T) {
 
 	mock.ExpectQuery(`SELECT.*FROM retrospectives WHERE id`).
 		WithArgs(retrospectiveID).
-		WillReturnRows(sqlmock.NewRows([]string{"id", "team_id", "title", "description", "template", "status", "scheduled_at", "started_at", "ended_at", "timer_duration", "timer_started_at", "timer_paused_at", "timer_elapsed_time", "created_by", "created_at", "updated_at"}).
-			AddRow(expectedRetrospective.ID, expectedRetrospective.TeamID, expectedRetrospective.Title, expectedRetrospective.Description, expectedRetrospective.Template, expectedRetrospective.Status, nil, nil, nil, 0, nil, nil, 0, expectedRetrospective.CreatedBy, expectedRetrospective.CreatedAt, expectedRetrospective.UpdatedAt))
+		WillReturnRows(sqlmock.NewRows([]string{"id", "team_id", "title", "description", "template", "status", "scheduled_at", "started_at", "ended_at", "created_by", "created_at", "updated_at"}).
+			AddRow(expectedRetrospective.ID, expectedRetrospective.TeamID, expectedRetrospective.Title, expectedRetrospective.Description, expectedRetrospective.Template, expectedRetrospective.Status, nil, nil, nil, expectedRetrospective.CreatedBy, expectedRetrospective.CreatedAt, expectedRetrospective.UpdatedAt))
 
 	retrospective, err := repo.GetByID(retrospectiveID)
 
@@ -142,8 +142,8 @@ func TestRetrospectiveRepository_GetByUserID(t *testing.T) {
 
 	mock.ExpectQuery(`SELECT.*FROM retrospectives`).
 		WithArgs(userID).
-		WillReturnRows(sqlmock.NewRows([]string{"id", "team_id", "title", "description", "template", "status", "scheduled_at", "started_at", "ended_at", "timer_duration", "timer_started_at", "timer_paused_at", "timer_elapsed_time", "created_by", "created_at", "updated_at"}).
-			AddRow(expectedRetrospective.ID, expectedRetrospective.TeamID, expectedRetrospective.Title, expectedRetrospective.Description, expectedRetrospective.Template, expectedRetrospective.Status, nil, nil, nil, 0, nil, nil, 0, expectedRetrospective.CreatedBy, expectedRetrospective.CreatedAt, expectedRetrospective.UpdatedAt))
+		WillReturnRows(sqlmock.NewRows([]string{"id", "team_id", "title", "description", "template", "status", "scheduled_at", "started_at", "ended_at", "created_by", "created_at", "updated_at"}).
+			AddRow(expectedRetrospective.ID, expectedRetrospective.TeamID, expectedRetrospective.Title, expectedRetrospective.Description, expectedRetrospective.Template, expectedRetrospective.Status, nil, nil, nil, expectedRetrospective.CreatedBy, expectedRetrospective.CreatedAt, expectedRetrospective.UpdatedAt))
 
 	retrospectives, err := repo.GetByUserID(userID)
 

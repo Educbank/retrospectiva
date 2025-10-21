@@ -33,5 +33,4 @@ type RetrospectiveRepositoryInterface interface {
 	GetActionItemByID(id uuid.UUID) (*models.ActionItem, error)
 	UpdateActionItem(actionItemID uuid.UUID, req *models.ActionItemUpdateRequest) (*models.ActionItem, error)
 	DeleteActionItem(id uuid.UUID) error
-	UpdateTimer(id uuid.UUID, req models.TimerUpdateRequest) error
 }

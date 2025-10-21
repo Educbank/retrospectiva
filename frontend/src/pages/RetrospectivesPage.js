@@ -3,11 +3,13 @@ import { Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from 'react-query';
 import { MessageSquare, Plus, Users, Clock, Trash2, CheckCircle, ArrowRight, RotateCcw } from 'lucide-react';
 import { retrospectivesAPI } from '../services/api';
+import { useAuth } from '../services/AuthContext';
 import toast from 'react-hot-toast';
 import ConfirmModal from '../components/ConfirmModal';
 
 const RetrospectivesPage = () => {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
   const { data: retrospectives, isLoading: retrospectivesLoading } = useQuery('userRetrospectives', retrospectivesAPI.getRetrospectives);
   
   // Modal states
@@ -15,6 +17,11 @@ const RetrospectivesPage = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showReopenModal, setShowReopenModal] = useState(false);
   const [selectedRetrospective, setSelectedRetrospective] = useState(null);
+
+  // Check if current user is the creator of the retrospective
+  const isRetrospectiveOwner = (retrospective) => {
+    return user && retrospective.created_by === user.id;
+  };
 
   const endRetrospectiveMutation = useMutation(
     (id) => retrospectivesAPI.endRetrospective(id),
@@ -176,7 +183,7 @@ const RetrospectivesPage = () => {
                   </div>
                 </div>
                 <div className="flex items-center space-x-4">
-                        {retro.status === 'active' && (
+                        {retro.status === 'active' && isRetrospectiveOwner(retro) && (
                           <button
                             onClick={() => handleEndRetrospective(retro)}
                             disabled={endRetrospectiveMutation.isLoading}
@@ -187,7 +194,7 @@ const RetrospectivesPage = () => {
                             <span className="text-xs text-gray-400">Encerrar</span>
                           </button>
                         )}
-                        {retro.status === 'closed' && (
+                        {retro.status === 'closed' && isRetrospectiveOwner(retro) && (
                           <button
                             onClick={() => handleReopenRetrospective(retro)}
                             disabled={reopenRetrospectiveMutation.isLoading}
@@ -198,7 +205,7 @@ const RetrospectivesPage = () => {
                             <span className="text-xs text-gray-400">Reabrir</span>
                           </button>
                         )}
-                        {retro.status !== 'closed' && (
+                        {retro.status !== 'closed' && isRetrospectiveOwner(retro) && (
                           <button
                             onClick={() => handleDeleteRetrospective(retro)}
                             disabled={deleteRetrospectiveMutation.isLoading}

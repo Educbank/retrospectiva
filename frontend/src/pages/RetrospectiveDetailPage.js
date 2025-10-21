@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from 'react-query';
-import { Users, Plus, Heart, MessageSquare, CheckCircle, AlertCircle, Clock, Trash2, Edit3, Filter, Calendar, Play, Pause, Square, X, Star, Eye, EyeOff } from 'lucide-react';
+import { Users, Plus, Heart, MessageSquare, CheckCircle, AlertCircle, Trash2, Edit3, Filter, Calendar, X, Star, Eye, EyeOff, Clock, Play, Pause, Square } from 'lucide-react';
 import { retrospectivesAPI, templatesAPI } from '../services/api';
 import { useAuth } from '../services/AuthContext';
 import useSSE from '../hooks/useSSE';
 import toast from 'react-hot-toast';
 import ConfirmModal from '../components/ConfirmModal';
+import Timer from '../components/Timer';
 
 const RetrospectiveDetailPage = () => {
   const { id } = useParams();
@@ -38,16 +39,10 @@ const RetrospectiveDetailPage = () => {
     return description.replace(/## ✅ Action Item Concluído - .*?\n\n\*\*Parecer sobre a conclusão:\*\*\n.*?\n\n---/s, '').trim();
   };
   const [actionItemFilter, setActionItemFilter] = useState('all'); // all, todo, in_progress, done
-  const [timer, setTimer] = useState({
-    isRunning: false,
-    startTime: null,
-    elapsedTime: 0,
-    totalTime: 0
-  });
-  const [isTimerOwner, setIsTimerOwner] = useState(false);
   const [draggedItem, setDraggedItem] = useState(null);
   const [dragOverItem, setDragOverItem] = useState(null);
-  const [isCommentsBlurred, setIsCommentsBlurred] = useState(false);
+  const [isCommentsBlurred, setIsCommentsBlurred] = useState(true);
+  
   
   // Modal states
   const [showDeleteItemModal, setShowDeleteItemModal] = useState(false);
@@ -203,17 +198,6 @@ const RetrospectiveDetailPage = () => {
     }
   );
 
-  const updateTimerMutation = useMutation(
-    (timerData) => retrospectivesAPI.updateTimer(id, timerData),
-    {
-      onSuccess: () => {
-        queryClient.invalidateQueries(['retrospective', id]);
-      },
-      onError: (error) => {
-        toast.error('Erro ao atualizar cronômetro: ' + (error.response?.data?.error || error.message));
-      },
-    }
-  );
 
   // Initialize SSE connection
   const sseUrl = `http://localhost:8080/api/v1/sse/retrospective`;
@@ -229,22 +213,7 @@ const RetrospectiveDetailPage = () => {
   // Handle real-time updates from SSE
   useEffect(() => {
     if (lastMessage) {
-      // Handle timer updates
-      if (lastMessage.type === 'timer_updated') {
-        const timerData = lastMessage.data;
-        
-        // Update local timer state
-        const elapsedTime = (timerData.elapsed_time || 0) * 1000;
-        const isRunning = timerData.started_at && !timerData.paused_at;
-        
-        setTimer(prev => ({
-          ...prev,
-          isRunning,
-          startTime: timerData.started_at ? new Date(timerData.started_at).getTime() : null,
-          elapsedTime: elapsedTime || 0,
-          totalTime: (timerData.duration || 0) * 1000
-        }));
-      } else if (lastMessage.type === 'blur_toggled') {
+      if (lastMessage.type === 'blur_toggled') {
         // Handle blur state updates from other users
         const blurData = lastMessage.data;
         setIsCommentsBlurred(blurData.blurred);
@@ -625,84 +594,9 @@ ${editingActionItem.feedback}
   };
 
 
-  // Timer functions
-  const startTimer = () => {
-    const now = new Date();
-    const elapsedTime = timer.elapsedTime || 0;
-    const startTime = new Date(now.getTime() - elapsedTime);
-    
-    updateTimerMutation.mutate({
-      started_at: startTime.toISOString(),
-      paused_at: null,
-      elapsed_time: Math.floor(elapsedTime / 1000)
-    });
-  };
 
-  const pauseTimer = () => {
-    const now = new Date();
-    const elapsedTime = Math.floor((timer.elapsedTime || 0) / 1000);
-    
-    updateTimerMutation.mutate({
-      paused_at: now.toISOString(),
-      elapsed_time: elapsedTime
-    });
-  };
 
-  const resetTimer = () => {
-    updateTimerMutation.mutate({
-      started_at: null,
-      paused_at: null,
-      elapsed_time: 0
-    });
-  };
 
-  const formatTime = (milliseconds) => {
-    if (!milliseconds || isNaN(milliseconds) || milliseconds < 0) {
-      return '00:00';
-    }
-    
-    const totalSeconds = Math.floor(milliseconds / 1000);
-    const hours = Math.floor(totalSeconds / 3600);
-    const minutes = Math.floor((totalSeconds % 3600) / 60);
-    const seconds = totalSeconds % 60;
-    
-    if (hours > 0) {
-      return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-    }
-    return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-  };
-
-  // Initialize timer from retrospective data
-  useEffect(() => {
-    if (retrospective && user) {
-      setIsTimerOwner(retrospective.created_by === user.id);
-      
-      // Initialize timer state from retrospective data
-      const elapsedTime = (retrospective.timer_elapsed_time || 0) * 1000; // Convert to milliseconds
-      const isRunning = retrospective.timer_started_at && !retrospective.timer_paused_at;
-      
-      setTimer({
-        isRunning,
-        startTime: retrospective.timer_started_at ? new Date(retrospective.timer_started_at).getTime() : null,
-        elapsedTime: elapsedTime || 0,
-        totalTime: (retrospective.timer_duration || 0) * 1000 // Convert to milliseconds
-      });
-    }
-  }, [retrospective, user]);
-
-  // Timer effect
-  useEffect(() => {
-    let interval;
-    if (timer.isRunning) {
-      interval = setInterval(() => {
-        setTimer(prev => ({
-          ...prev,
-          elapsedTime: Date.now() - prev.startTime
-        }));
-      }, 1000);
-    }
-    return () => clearInterval(interval);
-  }, [timer.isRunning, timer.startTime]);
 
 
   if (isLoading) {
@@ -755,11 +649,9 @@ ${editingActionItem.feedback}
             </div>
           </div>
             <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-4">
-                <div className="flex items-center text-sm text-gray-500">
-                  <Users className="h-4 w-4 mr-1" />
-                  {retrospective.participants?.length || 0} participantes
-                </div>
+              <div className="flex items-center text-sm text-gray-500">
+                <Users className="h-4 w-4 mr-1" />
+                {retrospective.participants?.length || 0} participantes
               </div>
               
               {/* Comments Blur Toggle - Only for retrospective owner */}
@@ -787,65 +679,19 @@ ${editingActionItem.feedback}
                 </button>
               )}
             
-            {/* Timer - Only show when retrospective is active */}
-            {retrospective.status === 'active' && (
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                <div className="flex items-center space-x-3">
-                  <div className="flex items-center space-x-2">
-                    <Clock className="h-4 w-4 text-blue-600" />
-                    <span className="text-sm font-medium text-blue-900">
-                      {formatTime(timer.elapsedTime)}
-                    </span>
-                    {timer.isRunning && (
-                      <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                    )}
-                  </div>
-                  {isTimerOwner && (
-                    <div className="flex items-center space-x-1">
-                      {!timer.isRunning ? (
-                        <button
-                          onClick={startTimer}
-                          disabled={updateTimerMutation.isLoading}
-                          className="p-1 text-blue-600 hover:text-blue-800 hover:bg-blue-100 rounded transition-colors disabled:opacity-50"
-                          title="Iniciar cronômetro"
-                        >
-                          <Play className="h-4 w-4" />
-                        </button>
-                      ) : (
-                        <button
-                          onClick={pauseTimer}
-                          disabled={updateTimerMutation.isLoading}
-                          className="p-1 text-blue-600 hover:text-blue-800 hover:bg-blue-100 rounded transition-colors disabled:opacity-50"
-                          title="Pausar cronômetro"
-                        >
-                          <Pause className="h-4 w-4" />
-                        </button>
-                      )}
-                      <button
-                        onClick={resetTimer}
-                        disabled={updateTimerMutation.isLoading}
-                        className="p-1 text-blue-600 hover:text-blue-800 hover:bg-blue-100 rounded transition-colors disabled:opacity-50"
-                        title="Resetar cronômetro"
-                      >
-                        <Square className="h-4 w-4" />
-                      </button>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-                 <div className="flex items-center space-x-2">
-                   {canStart && (
-                     <button
-                       onClick={() => startRetrospectiveMutation.mutate()}
-                       disabled={startRetrospectiveMutation.isLoading}
-                       className="btn btn-success disabled:opacity-50"
-                     >
-                       🚀 {startRetrospectiveMutation.isLoading ? 'Iniciando...' : 'Iniciar Retrospectiva'}
-                     </button>
-                   )}
-                 </div>
-          </div>
+              {/* Timer Component - Only for retrospective owner */}
+              {isRetrospectiveOwner() && <Timer />}
+              
+              {canStart && (
+                <button
+                  onClick={() => startRetrospectiveMutation.mutate()}
+                  disabled={startRetrospectiveMutation.isLoading}
+                  className="btn btn-success disabled:opacity-50"
+                >
+                  🚀 {startRetrospectiveMutation.isLoading ? 'Iniciando...' : 'Iniciar Retrospectiva'}
+                </button>
+              )}
+            </div>
         </div>
       </div>
 
