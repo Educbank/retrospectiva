@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from 'react-query';
-import { Users, Plus, Heart, MessageSquare, CheckCircle, AlertCircle, Trash2, Edit3, Filter, Calendar, X, Star, Eye, EyeOff, Clock, Play, Pause, Square } from 'lucide-react';
+import { Users, Plus, Heart, MessageSquare, CheckCircle, AlertCircle, Trash2, Edit3, Filter, Calendar, X, Star, Eye, EyeOff, Clock, Play, Pause, Square, Download } from 'lucide-react';
 import { retrospectivesAPI, templatesAPI } from '../services/api';
 import { useAuth } from '../services/AuthContext';
 import useSSE from '../hooks/useSSE';
@@ -576,6 +576,28 @@ ${editingActionItem.feedback}
     return retrospective && user && retrospective.created_by === user.id;
   };
 
+  const handleExportRetrospective = async () => {
+    try {
+      const response = await retrospectivesAPI.exportRetrospective(id);
+      
+      // Create blob and download
+      const blob = new Blob([response.data], { type: 'application/pdf' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `retrospective_${retrospective.title}_${new Date().toISOString().split('T')[0]}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      
+      toast.success('Retrospectiva exportada com sucesso!');
+    } catch (error) {
+      console.error('Error exporting retrospective:', error);
+      toast.error('Erro ao exportar retrospectiva');
+    }
+  };
+
   // Toggle comments blur
   const toggleCommentsBlur = () => {
     const newBlurState = !isCommentsBlurred;
@@ -681,6 +703,18 @@ ${editingActionItem.feedback}
             
               {/* Timer Component - Only for retrospective owner */}
               {isRetrospectiveOwner() && <Timer />}
+              
+              {/* Export Button - Only for retrospective owner */}
+              {isRetrospectiveOwner() && (
+                <button
+                  onClick={handleExportRetrospective}
+                  className="flex items-center space-x-2 px-3 py-2 bg-white border border-gray-300 text-gray-700 rounded-md text-sm font-medium hover:bg-gray-50 transition-colors"
+                  title="Exportar retrospectiva"
+                >
+                  <Download className="h-4 w-4" />
+                  <span>Exportar</span>
+                </button>
+              )}
               
               {canStart && (
                 <button

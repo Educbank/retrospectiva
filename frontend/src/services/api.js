@@ -96,6 +96,7 @@ export const retrospectivesAPI = {
   deleteGroup: (groupId) => api.delete(`/retrospectives/groups/${groupId}`),
   mergeItems: (id, data) => api.post(`/retrospectives/${id}/merge-items`, data),
   toggleBlur: (id, blurred) => api.put(`/retrospectives/${id}/blur`, { blurred }),
+  exportRetrospective: (id) => api.get(`/retrospectives/${id}/export`, { responseType: 'blob' }),
 };
 
 

@@ -1,13 +1,17 @@
 package handlers
 
 import (
+	"fmt"
 	"net/http"
+	"strings"
+	"time"
 
 	"educ-retro/internal/models"
 	"educ-retro/internal/services"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"github.com/jung-kurt/gofpdf"
 )
 
 type RetrospectiveHandler struct {
@@ -833,6 +837,7 @@ func (h *RetrospectiveHandler) SetupRoutes(r *gin.RouterGroup) {
 		retrospectives.POST("/:id/groups", h.CreateGroup)
 		retrospectives.POST("/:id/merge-items", h.MergeItems)
 		retrospectives.PUT("/:id/blur", h.ToggleBlur)
+		retrospectives.GET("/:id/export", h.ExportRetrospective)
 	}
 }
 
@@ -880,4 +885,157 @@ func (h *RetrospectiveHandler) ToggleBlur(c *gin.Context) {
 	})
 
 	c.JSON(http.StatusOK, gin.H{"message": "Blur state updated successfully", "blurred": req.Blurred})
+}
+
+// ExportRetrospective godoc
+// @Summary Export retrospective to PDF
+// @Description Export a retrospective to PDF format (only accessible by the creator)
+// @Tags Retrospectives
+// @Accept json
+// @Produce application/pdf
+// @Security BearerAuth
+// @Param id path string true "Retrospective ID"
+// @Success 200 {file} binary "PDF file"
+// @Failure 400 {object} map[string]string "Invalid retrospective ID"
+// @Failure 401 {object} map[string]string "Unauthorized"
+// @Failure 403 {object} map[string]string "Access denied - only creator can export"
+// @Failure 404 {object} map[string]string "Retrospective not found"
+// @Router /retrospectives/{id}/export [get]
+func (h *RetrospectiveHandler) ExportRetrospective(c *gin.Context) {
+	userID, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "user not authenticated"})
+		return
+	}
+
+	retrospectiveIDStr := c.Param("id")
+	retrospectiveID, err := uuid.Parse(retrospectiveIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid retrospective ID"})
+		return
+	}
+
+	// Get retrospective with full details
+	retrospective, err := h.retrospectiveService.GetRetrospectiveWithDetails(retrospectiveID, userID.(uuid.UUID))
+	if err != nil {
+		status := http.StatusInternalServerError
+		if err.Error() == "access denied" {
+			status = http.StatusForbidden
+		} else if err.Error() == "retrospective not found" {
+			status = http.StatusNotFound
+		}
+		c.JSON(status, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Check if user is the creator
+	if retrospective.CreatedBy != userID.(uuid.UUID) {
+		c.JSON(http.StatusForbidden, gin.H{"error": "only the retrospective creator can export"})
+		return
+	}
+
+	// Generate PDF content
+	pdfContent, err := h.generateRetrospectivePDF(retrospective)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to generate PDF"})
+		return
+	}
+
+	// Set headers for PDF download
+	filename := fmt.Sprintf("retrospective_%s_%s.pdf", retrospective.Title, time.Now().Format("2006-01-02"))
+	c.Header("Content-Type", "application/pdf")
+	c.Header("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", filename))
+	c.Header("Content-Length", fmt.Sprintf("%d", len(pdfContent)))
+
+	c.Data(http.StatusOK, "application/pdf", pdfContent)
+}
+
+// generateRetrospectivePDF creates a PDF representation of the retrospective
+func (h *RetrospectiveHandler) generateRetrospectivePDF(retrospective *models.RetrospectiveWithDetails) ([]byte, error) {
+	pdf := gofpdf.New("P", "mm", "A4", "")
+	pdf.AddPage()
+	pdf.SetFont("Arial", "B", 16)
+
+	// Title
+	pdf.Cell(0, 10, fmt.Sprintf("RETROSPECTIVA: %s", retrospective.Title))
+	pdf.Ln(15)
+
+	// Basic info
+	pdf.SetFont("Arial", "", 12)
+	pdf.Cell(0, 8, fmt.Sprintf("Status: %s", retrospective.Status))
+	pdf.Ln(8)
+	pdf.Cell(0, 8, fmt.Sprintf("Template: %s", retrospective.Template))
+	pdf.Ln(8)
+
+	if retrospective.EndedAt != nil {
+		pdf.Cell(0, 8, fmt.Sprintf("Data de Termino: %s", retrospective.EndedAt.Format("02/01/2006 15:04")))
+		pdf.Ln(8)
+	}
+
+	pdf.Ln(5)
+
+	// Groups
+	if len(retrospective.Groups) > 0 {
+		pdf.SetFont("Arial", "B", 14)
+		pdf.Cell(0, 10, "GRUPOS")
+		pdf.Ln(10)
+
+		pdf.SetFont("Arial", "", 10)
+		for _, group := range retrospective.Groups {
+			pdf.Cell(0, 6, fmt.Sprintf("- %s (%d votos)", group.Name, group.Votes))
+			pdf.Ln(6)
+		}
+		pdf.Ln(5)
+	}
+
+	// Items
+	if len(retrospective.Items) > 0 {
+		pdf.SetFont("Arial", "B", 14)
+		pdf.Cell(0, 10, "ITENS")
+		pdf.Ln(10)
+
+		pdf.SetFont("Arial", "", 10)
+		for _, item := range retrospective.Items {
+			// Format like in the attachment: - [category] content (votes votos)
+			content := fmt.Sprintf("- [%s] %s (%d votos)", item.Category, item.Content, item.Votes)
+			pdf.Cell(0, 6, content)
+			pdf.Ln(6)
+		}
+		pdf.Ln(5)
+	}
+
+	// Action Items
+	if len(retrospective.ActionItems) > 0 {
+		pdf.SetFont("Arial", "B", 14)
+		pdf.Cell(0, 10, "ITENS DE ACAO")
+		pdf.Ln(10)
+
+		pdf.SetFont("Arial", "", 10)
+		for _, actionItem := range retrospective.ActionItems {
+			status := "Pendente"
+			if actionItem.Status == "done" {
+				status = "Concluido"
+			} else if actionItem.Status == "in_progress" {
+				status = "Em Progresso"
+			}
+
+			// Format like in the attachment: - Title - Status
+			pdf.Cell(0, 6, fmt.Sprintf("- %s - %s", actionItem.Title, status))
+			pdf.Ln(6)
+		}
+		pdf.Ln(5)
+	}
+
+	// Footer
+	pdf.SetFont("Arial", "", 8)
+	pdf.Cell(0, 6, fmt.Sprintf("Relatorio gerado em: %s", time.Now().Format("02/01/2006 15:04")))
+
+	// Generate PDF bytes
+	var buf strings.Builder
+	err := pdf.Output(&buf)
+	if err != nil {
+		return nil, err
+	}
+
+	return []byte(buf.String()), nil
 }
