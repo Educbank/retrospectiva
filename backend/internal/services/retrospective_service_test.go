@@ -130,57 +130,17 @@ func (m *MockRetrospectiveRepository) UpdateActionItem(actionItemID uuid.UUID, r
 }
 func (m *MockRetrospectiveRepository) DeleteActionItem(id uuid.UUID) error { return nil }
 
-// MockTeamRepository para testes
-type MockTeamRepositoryForRetro struct {
-	teams map[uuid.UUID]*models.Team
-}
-
-func NewMockTeamRepositoryForRetro() *MockTeamRepositoryForRetro {
-	return &MockTeamRepositoryForRetro{
-		teams: make(map[uuid.UUID]*models.Team),
-	}
-}
-
-func (m *MockTeamRepositoryForRetro) Create(team *models.Team) error { return nil }
-func (m *MockTeamRepositoryForRetro) GetByID(id uuid.UUID) (*models.Team, error) {
-	return nil, sql.ErrNoRows
-}
-func (m *MockTeamRepositoryForRetro) GetByUserID(userID uuid.UUID) ([]models.TeamWithCounts, error) {
-	return []models.TeamWithCounts{}, nil
-}
-func (m *MockTeamRepositoryForRetro) Update(team *models.Team) error { return nil }
-func (m *MockTeamRepositoryForRetro) Delete(id uuid.UUID) error      { return nil }
-func (m *MockTeamRepositoryForRetro) IsMember(teamID, userID uuid.UUID) (bool, error) {
-	return true, nil
-}
-func (m *MockTeamRepositoryForRetro) GetMemberRole(teamID, userID uuid.UUID) (string, error) {
-	return "owner", nil
-}
-func (m *MockTeamRepositoryForRetro) GetMembers(teamID uuid.UUID) ([]models.TeamMemberWithUser, error) {
-	return []models.TeamMemberWithUser{}, nil
-}
-func (m *MockTeamRepositoryForRetro) AddMember(teamID, userID uuid.UUID, role string) error {
-	return nil
-}
-func (m *MockTeamRepositoryForRetro) RemoveMember(teamID, userID uuid.UUID) error { return nil }
-func (m *MockTeamRepositoryForRetro) UpdateMemberRole(teamID, userID uuid.UUID, newRole string) error {
-	return nil
-}
-
 func TestNewRetrospectiveService(t *testing.T) {
 	mockRetroRepo := NewMockRetrospectiveRepository()
-	mockTeamRepo := NewMockTeamRepositoryForRetro()
-	service := NewRetrospectiveService(mockRetroRepo, mockTeamRepo)
+	service := NewRetrospectiveService(mockRetroRepo)
 
 	assert.NotNil(t, service)
 	assert.Equal(t, mockRetroRepo, service.retroRepo)
-	assert.Equal(t, mockTeamRepo, service.teamRepo)
 }
 
 func TestRetrospectiveService_CreateRetrospective(t *testing.T) {
 	mockRetroRepo := NewMockRetrospectiveRepository()
-	mockTeamRepo := NewMockTeamRepositoryForRetro()
-	service := NewRetrospectiveService(mockRetroRepo, mockTeamRepo)
+	service := NewRetrospectiveService(mockRetroRepo)
 
 	userID := uuid.New()
 	request := &models.RetrospectiveCreateRequest{
@@ -200,8 +160,7 @@ func TestRetrospectiveService_CreateRetrospective(t *testing.T) {
 
 func TestRetrospectiveService_GetUserRetrospectives(t *testing.T) {
 	mockRetroRepo := NewMockRetrospectiveRepository()
-	mockTeamRepo := NewMockTeamRepositoryForRetro()
-	service := NewRetrospectiveService(mockRetroRepo, mockTeamRepo)
+	service := NewRetrospectiveService(mockRetroRepo)
 
 	userID := uuid.New()
 
@@ -238,8 +197,7 @@ func TestRetrospectiveService_GetUserRetrospectives(t *testing.T) {
 
 func TestRetrospectiveService_GetRetrospective(t *testing.T) {
 	mockRetroRepo := NewMockRetrospectiveRepository()
-	mockTeamRepo := NewMockTeamRepositoryForRetro()
-	service := NewRetrospectiveService(mockRetroRepo, mockTeamRepo)
+	service := NewRetrospectiveService(mockRetroRepo)
 
 	retrospectiveID := uuid.New()
 	userID := uuid.New()
@@ -261,8 +219,7 @@ func TestRetrospectiveService_GetRetrospective(t *testing.T) {
 
 func TestRetrospectiveService_GetRetrospective_AccessDenied(t *testing.T) {
 	mockRetroRepo := NewMockRetrospectiveRepository()
-	mockTeamRepo := NewMockTeamRepositoryForRetro()
-	service := NewRetrospectiveService(mockRetroRepo, mockTeamRepo)
+	service := NewRetrospectiveService(mockRetroRepo)
 
 	retrospectiveID := uuid.New()
 	userID := uuid.New()
@@ -285,8 +242,7 @@ func TestRetrospectiveService_GetRetrospective_AccessDenied(t *testing.T) {
 
 func TestRetrospectiveService_UpdateRetrospective(t *testing.T) {
 	mockRetroRepo := NewMockRetrospectiveRepository()
-	mockTeamRepo := NewMockTeamRepositoryForRetro()
-	service := NewRetrospectiveService(mockRetroRepo, mockTeamRepo)
+	service := NewRetrospectiveService(mockRetroRepo)
 
 	retrospectiveID := uuid.New()
 	userID := uuid.New()
@@ -314,8 +270,7 @@ func TestRetrospectiveService_UpdateRetrospective(t *testing.T) {
 
 func TestRetrospectiveService_UpdateRetrospective_AccessDenied(t *testing.T) {
 	mockRetroRepo := NewMockRetrospectiveRepository()
-	mockTeamRepo := NewMockTeamRepositoryForRetro()
-	service := NewRetrospectiveService(mockRetroRepo, mockTeamRepo)
+	service := NewRetrospectiveService(mockRetroRepo)
 
 	retrospectiveID := uuid.New()
 	userID := uuid.New()
@@ -344,8 +299,7 @@ func TestRetrospectiveService_UpdateRetrospective_AccessDenied(t *testing.T) {
 
 func TestRetrospectiveService_DeleteRetrospective(t *testing.T) {
 	mockRetroRepo := NewMockRetrospectiveRepository()
-	mockTeamRepo := NewMockTeamRepositoryForRetro()
-	service := NewRetrospectiveService(mockRetroRepo, mockTeamRepo)
+	service := NewRetrospectiveService(mockRetroRepo)
 
 	retrospectiveID := uuid.New()
 	userID := uuid.New()
@@ -365,8 +319,7 @@ func TestRetrospectiveService_DeleteRetrospective(t *testing.T) {
 
 func TestRetrospectiveService_DeleteRetrospective_AccessDenied(t *testing.T) {
 	mockRetroRepo := NewMockRetrospectiveRepository()
-	mockTeamRepo := NewMockTeamRepositoryForRetro()
-	service := NewRetrospectiveService(mockRetroRepo, mockTeamRepo)
+	service := NewRetrospectiveService(mockRetroRepo)
 
 	retrospectiveID := uuid.New()
 	userID := uuid.New()
@@ -388,8 +341,7 @@ func TestRetrospectiveService_DeleteRetrospective_AccessDenied(t *testing.T) {
 
 func TestRetrospectiveService_ReopenRetrospective(t *testing.T) {
 	mockRetroRepo := NewMockRetrospectiveRepository()
-	mockTeamRepo := NewMockTeamRepositoryForRetro()
-	service := NewRetrospectiveService(mockRetroRepo, mockTeamRepo)
+	service := NewRetrospectiveService(mockRetroRepo)
 
 	retrospectiveID := uuid.New()
 	userID := uuid.New()
@@ -410,8 +362,7 @@ func TestRetrospectiveService_ReopenRetrospective(t *testing.T) {
 
 func TestRetrospectiveService_ReopenRetrospective_AccessDenied(t *testing.T) {
 	mockRetroRepo := NewMockRetrospectiveRepository()
-	mockTeamRepo := NewMockTeamRepositoryForRetro()
-	service := NewRetrospectiveService(mockRetroRepo, mockTeamRepo)
+	service := NewRetrospectiveService(mockRetroRepo)
 
 	retrospectiveID := uuid.New()
 	userID := uuid.New()
@@ -434,8 +385,7 @@ func TestRetrospectiveService_ReopenRetrospective_AccessDenied(t *testing.T) {
 
 func TestRetrospectiveService_ReopenRetrospective_NotClosed(t *testing.T) {
 	mockRetroRepo := NewMockRetrospectiveRepository()
-	mockTeamRepo := NewMockTeamRepositoryForRetro()
-	service := NewRetrospectiveService(mockRetroRepo, mockTeamRepo)
+	service := NewRetrospectiveService(mockRetroRepo)
 
 	retrospectiveID := uuid.New()
 	userID := uuid.New()
@@ -457,8 +407,7 @@ func TestRetrospectiveService_ReopenRetrospective_NotClosed(t *testing.T) {
 
 func TestRetrospectiveService_RegisterParticipant_AutoStart(t *testing.T) {
 	mockRetroRepo := NewMockRetrospectiveRepository()
-	mockTeamRepo := NewMockTeamRepositoryForRetro()
-	service := NewRetrospectiveService(mockRetroRepo, mockTeamRepo)
+	service := NewRetrospectiveService(mockRetroRepo)
 
 	retrospectiveID := uuid.New()
 	userID := uuid.New()
@@ -485,8 +434,7 @@ func TestRetrospectiveService_RegisterParticipant_AutoStart(t *testing.T) {
 
 func TestRetrospectiveService_RegisterParticipant_NoAutoStartForActive(t *testing.T) {
 	mockRetroRepo := NewMockRetrospectiveRepository()
-	mockTeamRepo := NewMockTeamRepositoryForRetro()
-	service := NewRetrospectiveService(mockRetroRepo, mockTeamRepo)
+	service := NewRetrospectiveService(mockRetroRepo)
 
 	retrospectiveID := uuid.New()
 	userID := uuid.New()

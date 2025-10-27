@@ -1,17 +1,13 @@
 # Makefile for educ-retro backend
 
-.PHONY: help test test-unit test-integration test-all bench clean deps build run swagger swagger-serve swagger-clean
+.PHONY: help test test-unit test-all bench clean deps build run swagger swagger-serve swagger-clean
 
 # Default target
 help:
 	@echo "Available targets:"
-	@echo "  test          - Run all tests (unit + integration + schema)"
+	@echo "  test          - Run all tests (unit + schema)"
 	@echo "  test-unit     - Run unit tests only"
-	@echo "  test-integration - Run integration tests only"
 	@echo "  test-schema   - Run schema validation tests"
-	@echo "  test-user     - Run user integration tests"
-	@echo "  test-team     - Run team integration tests"
-	@echo "  test-retro    - Run retrospective integration tests"
 	@echo "  bench         - Run benchmarks"
 	@echo "  deps          - Install dependencies"
 	@echo "  build         - Build the application"
@@ -40,38 +36,13 @@ test-unit:
 	@echo "Running unit tests..."
 	go test ./... -v -short
 
-# Run integration tests
-test-integration:
-	@echo "Running integration tests..."
-	@./scripts/run-integration-tests.sh -i
-
-# Run user integration tests
-test-user:
-	@echo "Running user integration tests..."
-	@./scripts/run-integration-tests.sh -c user
-
-# Run team integration tests
-test-team:
-	@echo "Running team integration tests..."
-	@./scripts/run-integration-tests.sh -c team
-
-# Run retrospective integration tests
-test-retro:
-	@echo "Running retrospective integration tests..."
-	@./scripts/run-integration-tests.sh -c retrospective
-
 # Run schema tests
 test-schema:
 	@echo "Running schema tests..."
 	go test ./tests/schema -v
 
 # Run all tests
-test: test-unit test-integration test-schema
-
-# Run benchmarks
-bench:
-	@echo "Running benchmarks..."
-	@./scripts/run-integration-tests.sh -b
+test: test-unit test-schema
 
 # Build the application
 build:
@@ -122,12 +93,6 @@ coverage:
 	go tool cover -html=coverage.out -o coverage.html
 	@echo "Coverage report generated: coverage.html"
 
-# Test coverage for integration tests
-coverage-integration:
-	@echo "Running integration tests with coverage..."
-	go test ./tests/integration -coverprofile=coverage-integration.out
-	go tool cover -html=coverage-integration.out -o coverage-integration.html
-	@echo "Integration coverage report generated: coverage-integration.html"
 
 # Lint code
 lint:

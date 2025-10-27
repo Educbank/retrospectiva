@@ -71,59 +71,6 @@ func TestJSONSchemaValidation(t *testing.T) {
 			},
 		},
 		{
-			name: "Team JSON Schema",
-			data: models.Team{
-				ID:          uuid.New(),
-				Name:        "Test Team",
-				Description: stringPtr("A test team"),
-				OwnerID:     uuid.New(),
-				CreatedAt:   time.Now(),
-				UpdatedAt:   time.Now(),
-			},
-			validate: func(t *testing.T, jsonMap map[string]interface{}) {
-				// Check required fields
-				assert.Contains(t, jsonMap, "id")
-				assert.Contains(t, jsonMap, "name")
-				assert.Contains(t, jsonMap, "owner_id")
-				assert.Contains(t, jsonMap, "created_at")
-				assert.Contains(t, jsonMap, "updated_at")
-
-				// Check field types
-				assert.IsType(t, "", jsonMap["id"])         // UUID as string
-				assert.IsType(t, "", jsonMap["name"])       // Name as string
-				assert.IsType(t, "", jsonMap["owner_id"])   // UUID as string
-				assert.IsType(t, "", jsonMap["created_at"]) // Time as string
-				assert.IsType(t, "", jsonMap["updated_at"]) // Time as string
-
-				// Check optional fields
-				if description, exists := jsonMap["description"]; exists {
-					assert.IsType(t, "", description) // Description as string
-				}
-			},
-		},
-		{
-			name: "Team without description",
-			data: models.Team{
-				ID:          uuid.New(),
-				Name:        "Simple Team",
-				Description: nil,
-				OwnerID:     uuid.New(),
-				CreatedAt:   time.Now(),
-				UpdatedAt:   time.Now(),
-			},
-			validate: func(t *testing.T, jsonMap map[string]interface{}) {
-				// Check required fields
-				assert.Contains(t, jsonMap, "id")
-				assert.Contains(t, jsonMap, "name")
-				assert.Contains(t, jsonMap, "owner_id")
-
-				// Check optional fields
-				if description, exists := jsonMap["description"]; exists {
-					assert.Nil(t, description)
-				}
-			},
-		},
-		{
 			name: "Retrospective JSON Schema",
 			data: models.Retrospective{
 				ID:          uuid.New(),
@@ -261,43 +208,6 @@ func TestAPIRequestSchema(t *testing.T) {
 				email := jsonMap["email"].(string)
 				assert.Contains(t, email, "@")
 				assert.Contains(t, email, ".")
-			},
-		},
-		{
-			name: "TeamCreateRequest Schema",
-			data: models.TeamCreateRequest{
-				Name:        "Test Team",
-				Description: "A test team",
-			},
-			validate: func(t *testing.T, jsonMap map[string]interface{}) {
-				// Check required fields
-				assert.Contains(t, jsonMap, "name")
-
-				// Check field types
-				assert.IsType(t, "", jsonMap["name"]) // Name as string
-
-				// Check optional fields
-				if description, exists := jsonMap["description"]; exists {
-					assert.IsType(t, "", description) // Description as string
-				}
-			},
-		},
-		{
-			name: "TeamCreateRequest without description",
-			data: models.TeamCreateRequest{
-				Name: "Simple Team",
-			},
-			validate: func(t *testing.T, jsonMap map[string]interface{}) {
-				// Check required fields
-				assert.Contains(t, jsonMap, "name")
-
-				// Check field types
-				assert.IsType(t, "", jsonMap["name"])
-
-				// Description should be empty string or not exist
-				if description, exists := jsonMap["description"]; exists {
-					assert.Equal(t, "", description)
-				}
 			},
 		},
 		{
@@ -559,28 +469,6 @@ func TestNullPointerHandling(t *testing.T) {
 				if assignedTo, exists := jsonMap["assigned_to"]; exists {
 					assert.Nil(t, assignedTo)
 				}
-			},
-		},
-		{
-			name: "Mixed null and non-null pointers",
-			data: models.Team{
-				ID:          uuid.New(),
-				Name:        "Test Team",
-				Description: nil, // Null pointer
-				OwnerID:     uuid.New(),
-				CreatedAt:   time.Now(),
-				UpdatedAt:   time.Now(),
-			},
-			validate: func(t *testing.T, jsonMap map[string]interface{}) {
-				// Description should be null or missing
-				if description, exists := jsonMap["description"]; exists {
-					assert.Nil(t, description)
-				}
-
-				// Other fields should exist
-				assert.Contains(t, jsonMap, "id")
-				assert.Contains(t, jsonMap, "name")
-				assert.Contains(t, jsonMap, "owner_id")
 			},
 		},
 	}
