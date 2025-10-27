@@ -50,7 +50,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Template details",
                         "schema": {
-                            "$ref": "#/definitions/services.TemplateDefinition"
+                            "$ref": "#/definitions/educ-retro_internal_services.TemplateDefinition"
                         }
                     },
                     "400": {
@@ -102,7 +102,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/services.TemplateCategory"
+                                "$ref": "#/definitions/educ-retro_internal_services.TemplateCategory"
                             }
                         }
                     },
@@ -147,7 +147,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/models.UserLoginRequest"
+                            "$ref": "#/definitions/educ-retro_internal_models.UserLoginRequest"
                         }
                     }
                 ],
@@ -200,7 +200,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/models.UserCreateRequest"
+                            "$ref": "#/definitions/educ-retro_internal_models.UserCreateRequest"
                         }
                     }
                 ],
@@ -240,7 +240,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Get all retrospectives where the current user is a team member",
+                "description": "Get all retrospectives created by or participated in by the current user",
                 "consumes": [
                     "application/json"
                 ],
@@ -257,7 +257,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/models.Retrospective"
+                                "$ref": "#/definitions/educ-retro_internal_models.Retrospective"
                             }
                         }
                     },
@@ -278,7 +278,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Create a new retrospective for a team",
+                "description": "Create a new retrospective session",
                 "consumes": [
                     "application/json"
                 ],
@@ -296,7 +296,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/models.RetrospectiveCreateRequest"
+                            "$ref": "#/definitions/educ-retro_internal_models.RetrospectiveCreateRequest"
                         }
                     }
                 ],
@@ -304,7 +304,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Retrospective created successfully",
                         "schema": {
-                            "$ref": "#/definitions/models.Retrospective"
+                            "$ref": "#/definitions/educ-retro_internal_models.Retrospective"
                         }
                     },
                     "400": {
@@ -368,7 +368,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Retrospective details",
                         "schema": {
-                            "$ref": "#/definitions/models.Retrospective"
+                            "$ref": "#/definitions/educ-retro_internal_models.Retrospective"
                         }
                     },
                     "400": {
@@ -440,7 +440,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/models.RetrospectiveCreateRequest"
+                            "$ref": "#/definitions/educ-retro_internal_models.RetrospectiveCreateRequest"
                         }
                     }
                 ],
@@ -448,7 +448,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Updated retrospective",
                         "schema": {
-                            "$ref": "#/definitions/models.Retrospective"
+                            "$ref": "#/definitions/educ-retro_internal_models.Retrospective"
                         }
                     },
                     "400": {
@@ -607,6 +607,79 @@ const docTemplate = `{
                 }
             }
         },
+        "/retrospectives/{id}/export": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Export a retrospective to PDF format (only accessible by the creator)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/pdf"
+                ],
+                "tags": [
+                    "Retrospectives"
+                ],
+                "summary": "Export retrospective to PDF",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Retrospective ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "PDF file",
+                        "schema": {
+                            "type": "file"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid retrospective ID",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Access denied - only creator can export",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Retrospective not found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/retrospectives/{id}/start": {
             "post": {
                 "security": [
@@ -674,454 +747,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/teams": {
-            "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Get all teams where the current user is a member",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Teams"
-                ],
-                "summary": "Get user's teams",
-                "responses": {
-                    "200": {
-                        "description": "User's teams",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/models.Team"
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    }
-                }
-            },
-            "post": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Create a new team with the current user as owner",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Teams"
-                ],
-                "summary": "Create a new team",
-                "parameters": [
-                    {
-                        "description": "Team creation data",
-                        "name": "team",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/models.TeamCreateRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "Team created successfully",
-                        "schema": {
-                            "$ref": "#/definitions/models.Team"
-                        }
-                    },
-                    "400": {
-                        "description": "Invalid input",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/teams/{id}": {
-            "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Get detailed information about a specific team including members",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Teams"
-                ],
-                "summary": "Get team details",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Team ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Team details",
-                        "schema": {
-                            "$ref": "#/definitions/models.TeamWithMembers"
-                        }
-                    },
-                    "400": {
-                        "description": "Invalid team ID",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "403": {
-                        "description": "Access denied",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "Team not found",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    }
-                }
-            },
-            "put": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Update team information (only team owner can update)",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Teams"
-                ],
-                "summary": "Update team",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Team ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Team update data",
-                        "name": "team",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/models.TeamCreateRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Updated team",
-                        "schema": {
-                            "$ref": "#/definitions/models.Team"
-                        }
-                    },
-                    "400": {
-                        "description": "Invalid input",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "403": {
-                        "description": "Access denied",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    }
-                }
-            },
-            "delete": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Delete a team (only team owner can delete)",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Teams"
-                ],
-                "summary": "Delete team",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Team ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "204": {
-                        "description": "Team deleted successfully"
-                    },
-                    "400": {
-                        "description": "Invalid team ID",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "403": {
-                        "description": "Access denied",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/teams/{id}/members": {
-            "post": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Add a new member to the team",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Teams"
-                ],
-                "summary": "Add team member",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Team ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Member invitation data",
-                        "name": "invite",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/models.TeamInviteRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Member added successfully",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "Invalid input",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "403": {
-                        "description": "Access denied",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/teams/{id}/members/{userId}": {
-            "delete": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Remove a member from the team",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Teams"
-                ],
-                "summary": "Remove team member",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Team ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "User ID",
-                        "name": "userId",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Member removed successfully",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "Invalid input",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "403": {
-                        "description": "Access denied",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    }
-                }
-            }
-        },
         "/templates": {
             "get": {
                 "description": "Get all available templates for retrospectives",
@@ -1141,7 +766,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/services.TemplateDefinition"
+                                "$ref": "#/definitions/educ-retro_internal_services.TemplateDefinition"
                             }
                         }
                     }
@@ -1170,7 +795,7 @@ const docTemplate = `{
                     "200": {
                         "description": "User profile",
                         "schema": {
-                            "$ref": "#/definitions/models.UserResponse"
+                            "$ref": "#/definitions/educ-retro_internal_models.UserResponse"
                         }
                     },
                     "401": {
@@ -1233,7 +858,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Updated user profile",
                         "schema": {
-                            "$ref": "#/definitions/models.UserResponse"
+                            "$ref": "#/definitions/educ-retro_internal_models.UserResponse"
                         }
                     },
                     "400": {
@@ -1268,7 +893,7 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "models.Retrospective": {
+        "educ-retro_internal_models.Retrospective": {
             "type": "object",
             "properties": {
                 "created_at": {
@@ -1293,13 +918,10 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "status": {
-                    "$ref": "#/definitions/models.RetrospectiveStatus"
-                },
-                "team_id": {
-                    "type": "string"
+                    "$ref": "#/definitions/educ-retro_internal_models.RetrospectiveStatus"
                 },
                 "template": {
-                    "$ref": "#/definitions/models.RetrospectiveTemplate"
+                    "$ref": "#/definitions/educ-retro_internal_models.RetrospectiveTemplate"
                 },
                 "title": {
                     "type": "string"
@@ -1309,7 +931,7 @@ const docTemplate = `{
                 }
             }
         },
-        "models.RetrospectiveCreateRequest": {
+        "educ-retro_internal_models.RetrospectiveCreateRequest": {
             "type": "object",
             "required": [
                 "template",
@@ -1320,14 +942,14 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "template": {
-                    "$ref": "#/definitions/models.RetrospectiveTemplate"
+                    "$ref": "#/definitions/educ-retro_internal_models.RetrospectiveTemplate"
                 },
                 "title": {
                     "type": "string"
                 }
             }
         },
-        "models.RetrospectiveStatus": {
+        "educ-retro_internal_models.RetrospectiveStatus": {
             "type": "string",
             "enum": [
                 "planned",
@@ -1346,7 +968,7 @@ const docTemplate = `{
                 "RetroStatusClosed"
             ]
         },
-        "models.RetrospectiveTemplate": {
+        "educ-retro_internal_models.RetrospectiveTemplate": {
             "type": "string",
             "enum": [
                 "start_stop_continue",
@@ -1373,107 +995,7 @@ const docTemplate = `{
                 "TemplateWentWellToImprove"
             ]
         },
-        "models.Team": {
-            "type": "object",
-            "properties": {
-                "created_at": {
-                    "type": "string"
-                },
-                "description": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "owner_id": {
-                    "type": "string"
-                },
-                "updated_at": {
-                    "type": "string"
-                }
-            }
-        },
-        "models.TeamCreateRequest": {
-            "type": "object",
-            "required": [
-                "name"
-            ],
-            "properties": {
-                "description": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                }
-            }
-        },
-        "models.TeamInviteRequest": {
-            "type": "object",
-            "required": [
-                "email",
-                "role"
-            ],
-            "properties": {
-                "email": {
-                    "type": "string"
-                },
-                "role": {
-                    "type": "string",
-                    "enum": [
-                        "member",
-                        "viewer"
-                    ]
-                }
-            }
-        },
-        "models.TeamMemberWithUser": {
-            "type": "object",
-            "properties": {
-                "id": {
-                    "type": "string"
-                },
-                "joined_at": {
-                    "type": "string"
-                },
-                "role": {
-                    "description": "owner, member, viewer",
-                    "type": "string"
-                },
-                "team_id": {
-                    "type": "string"
-                },
-                "user_email": {
-                    "type": "string"
-                },
-                "user_id": {
-                    "type": "string"
-                },
-                "user_name": {
-                    "type": "string"
-                }
-            }
-        },
-        "models.TeamWithMembers": {
-            "type": "object",
-            "properties": {
-                "members": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/models.TeamMemberWithUser"
-                    }
-                },
-                "owner": {
-                    "$ref": "#/definitions/models.UserResponse"
-                },
-                "team": {
-                    "$ref": "#/definitions/models.Team"
-                }
-            }
-        },
-        "models.UserCreateRequest": {
+        "educ-retro_internal_models.UserCreateRequest": {
             "type": "object",
             "required": [
                 "email",
@@ -1493,7 +1015,7 @@ const docTemplate = `{
                 }
             }
         },
-        "models.UserLoginRequest": {
+        "educ-retro_internal_models.UserLoginRequest": {
             "type": "object",
             "required": [
                 "email",
@@ -1508,7 +1030,7 @@ const docTemplate = `{
                 }
             }
         },
-        "models.UserResponse": {
+        "educ-retro_internal_models.UserResponse": {
             "type": "object",
             "properties": {
                 "avatar": {
@@ -1528,7 +1050,7 @@ const docTemplate = `{
                 }
             }
         },
-        "services.TemplateCategory": {
+        "educ-retro_internal_services.TemplateCategory": {
             "type": "object",
             "properties": {
                 "color": {
@@ -1548,13 +1070,13 @@ const docTemplate = `{
                 }
             }
         },
-        "services.TemplateDefinition": {
+        "educ-retro_internal_services.TemplateDefinition": {
             "type": "object",
             "properties": {
                 "categories": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/services.TemplateCategory"
+                        "$ref": "#/definitions/educ-retro_internal_services.TemplateCategory"
                     }
                 },
                 "description": {

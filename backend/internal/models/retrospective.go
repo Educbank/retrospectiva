@@ -29,7 +29,7 @@ const (
 
 type Retrospective struct {
 	ID          uuid.UUID             `json:"id" db:"id"`
-	TeamID      uuid.UUID             `json:"team_id" db:"team_id"`
+	TeamID      uuid.UUID             `json:"team_id,omitempty" db:"team_id" swaggerignore:"true"`
 	Title       string                `json:"title" db:"title"`
 	Description *string               `json:"description" db:"description"`
 	Template    RetrospectiveTemplate `json:"template" db:"template"`

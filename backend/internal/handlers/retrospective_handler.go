@@ -28,7 +28,7 @@ func NewRetrospectiveHandler(retrospectiveService *services.RetrospectiveService
 
 // CreateRetrospective godoc
 // @Summary Create a new retrospective
-// @Description Create a new retrospective for a team
+// @Description Create a new retrospective session
 // @Tags Retrospectives
 // @Accept json
 // @Produce json
@@ -67,7 +67,7 @@ func (h *RetrospectiveHandler) CreateRetrospective(c *gin.Context) {
 
 // GetUserRetrospectives godoc
 // @Summary Get user's retrospectives
-// @Description Get all retrospectives where the current user is a team member
+// @Description Get all retrospectives created by or participated in by the current user
 // @Tags Retrospectives
 // @Accept json
 // @Produce json
