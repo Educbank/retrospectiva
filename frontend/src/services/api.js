@@ -53,19 +53,6 @@ export const usersAPI = {
   getAnalytics: () => api.get('/users/analytics'),
 };
 
-// Teams API
-export const teamsAPI = {
-  getTeams: () => api.get('/teams'),
-  getTeam: (id) => api.get(`/teams/${id}`),
-  createTeam: (data) => api.post('/teams', data),
-  updateTeam: (id, data) => api.put(`/teams/${id}`, data),
-  deleteTeam: (id) => api.delete(`/teams/${id}`),
-  addMember: (id, data) => api.post(`/teams/${id}/members`, data),
-  removeMember: (teamId, userId) => api.delete(`/teams/${teamId}/members/${userId}`),
-  getAnalytics: (id) => api.get(`/teams/${id}/analytics`),
-  getMemberActivity: (id) => api.get(`/teams/${id}/analytics/members`),
-};
-
 // Templates API
 export const templatesAPI = {
   getTemplates: () => api.get('/templates'),

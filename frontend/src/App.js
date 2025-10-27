@@ -11,13 +11,9 @@ import Layout from './components/Layout';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import DashboardPage from './pages/DashboardPage';
-import TeamsPage from './pages/TeamsPage';
-import CreateTeamPage from './pages/CreateTeamPage';
-import TeamDetailPage from './pages/TeamDetailPage';
 import RetrospectivesPage from './pages/RetrospectivesPage';
 import CreateRetrospectivePage from './pages/CreateRetrospectivePage';
 import RetrospectiveDetailPage from './pages/RetrospectiveDetailPage';
-import TemplatesPage from './pages/TemplatesPage';
 import ActionItemsPage from './pages/ActionItemsPage';
 
 const queryClient = new QueryClient({
@@ -48,14 +44,10 @@ function App() {
               }>
                 <Route index element={<Navigate to="/dashboard" replace />} />
                 <Route path="dashboard" element={<DashboardPage />} />
-                <Route path="teams" element={<TeamsPage />} />
-                <Route path="teams/new" element={<CreateTeamPage />} />
-                <Route path="teams/:id" element={<TeamDetailPage />} />
                 <Route path="retrospectives" element={<RetrospectivesPage />} />
                 <Route path="retrospectives/new" element={<CreateRetrospectivePage />} />
                 <Route path="retrospectives/:id" element={<RetrospectiveDetailPage />} />
                 <Route path="action-items" element={<ActionItemsPage />} />
-                <Route path="templates" element={<TemplatesPage />} />
               </Route>
               
               {/* Catch all route */}

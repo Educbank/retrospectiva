@@ -58,21 +58,18 @@ func main() {
 
 	// Initialize repositories
 	userRepo := repositories.NewUserRepository(database.DB)
-	teamRepo := repositories.NewTeamRepository(database.DB)
 	retroRepo := repositories.NewRetrospectiveRepository(database.DB)
 
 	// Initialize services
 	userService := services.NewUserService(userRepo)
-	teamService := services.NewTeamService(teamRepo, userRepo)
 	templateService := services.NewTemplateService()
-	retrospectiveService := services.NewRetrospectiveService(retroRepo, teamRepo)
+	retrospectiveService := services.NewRetrospectiveService(retroRepo)
 
 	// Initialize Realtime service
 	realtimeService := services.NewRealtimeService()
 
 	// Initialize handlers
 	userHandler := handlers.NewUserHandler(userService)
-	teamHandler := handlers.NewTeamHandler(teamService)
 	templateHandler := handlers.NewTemplateHandler(templateService)
 	retrospectiveHandler := handlers.NewRetrospectiveHandler(retrospectiveService, realtimeService)
 	sseHandler := handlers.NewSSEHandler(realtimeService)
@@ -101,7 +98,6 @@ func main() {
 	v1 := r.Group("/api/v1")
 	{
 		userHandler.SetupRoutes(v1)
-		teamHandler.SetupRoutes(v1)
 		templateHandler.SetupRoutes(v1)
 		retrospectiveHandler.SetupRoutes(v1)
 		sseHandler.SetupRoutes(v1)

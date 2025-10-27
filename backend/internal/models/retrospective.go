@@ -147,7 +147,6 @@ type MergeItemsRequest struct {
 
 type RetrospectiveWithDetails struct {
 	Retrospective
-	Team         Team                       `json:"team"`
 	Items        []RetrospectiveItem        `json:"items"`
 	ActionItems  []ActionItem               `json:"action_items"`
 	Participants []RetrospectiveParticipant `json:"participants"`

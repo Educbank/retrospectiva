@@ -12,13 +12,11 @@ import (
 
 type RetrospectiveService struct {
 	retroRepo repositories.RetrospectiveRepositoryInterface
-	teamRepo  repositories.TeamRepositoryInterface
 }
 
-func NewRetrospectiveService(retroRepo repositories.RetrospectiveRepositoryInterface, teamRepo repositories.TeamRepositoryInterface) *RetrospectiveService {
+func NewRetrospectiveService(retroRepo repositories.RetrospectiveRepositoryInterface) *RetrospectiveService {
 	return &RetrospectiveService{
 		retroRepo: retroRepo,
-		teamRepo:  teamRepo,
 	}
 }
 
