@@ -6,15 +6,24 @@ import {
   MessageSquare, 
   FileText, 
   User, 
-  Menu, 
+  Menu,
   X,
   LogOut,
-  CheckSquare
+  CheckSquare,
+  PanelLeftClose,
+  PanelLeftOpen
 } from 'lucide-react';
 import { useAuth } from '../services/AuthContext';
 
 const Layout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(() => {
+    try {
+      return localStorage.getItem('educ-retro-sidebar-collapsed') === 'true';
+    } catch {
+      return false;
+    }
+  });
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -34,6 +43,18 @@ const Layout = () => {
     navigate('/login');
   };
 
+  const toggleCollapsed = () => {
+    setCollapsed((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem('educ-retro-sidebar-collapsed', String(next));
+      } catch {
+        // ignore storage errors (e.g. private mode)
+      }
+      return next;
+    });
+  };
+
   return (
     <div className="h-screen flex overflow-hidden bg-gray-50">
       {/* Mobile sidebar overlay */}
@@ -49,15 +70,15 @@ const Layout = () => {
                 <X className="h-6 w-6 text-gray-600" />
               </button>
             </div>
-            <SidebarContent navigation={navigation} isCurrentPath={isCurrentPath} />
+            <SidebarContent navigation={navigation} isCurrentPath={isCurrentPath} collapsed={false} />
           </div>
         </div>
       )}
 
       {/* Desktop sidebar */}
       <div className="hidden md:flex md:flex-shrink-0">
-        <div className="flex flex-col w-64">
-          <SidebarContent navigation={navigation} isCurrentPath={isCurrentPath} />
+        <div className={`flex flex-col transition-all duration-200 ${collapsed ? 'w-16' : 'w-64'}`}>
+          <SidebarContent navigation={navigation} isCurrentPath={isCurrentPath} collapsed={collapsed} />
         </div>
       </div>
 
@@ -70,6 +91,13 @@ const Layout = () => {
             onClick={() => setSidebarOpen(true)}
           >
             <Menu className="h-6 w-6" />
+          </button>
+          <button
+            className="px-4 border-r border-gray-200 text-gray-500 hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500 hidden md:block transition-colors"
+            onClick={toggleCollapsed}
+            title={collapsed ? 'Expandir menu' : 'Colapsar menu'}
+          >
+            {collapsed ? <PanelLeftOpen className="h-6 w-6" /> : <PanelLeftClose className="h-6 w-6" />}
           </button>
           
           <div className="flex-1 px-4 flex justify-between items-center">
@@ -100,7 +128,7 @@ const Layout = () => {
         {/* Page content */}
         <main className="flex-1 relative overflow-y-auto focus:outline-none">
           <div className="py-8">
-            <div className="container">
+            <div className="w-full px-4 sm:px-6 lg:px-8">
               <Outlet />
             </div>
           </div>
@@ -110,50 +138,53 @@ const Layout = () => {
   );
 };
 
-const SidebarContent = ({ navigation, isCurrentPath }) => {
+const SidebarContent = ({ navigation, isCurrentPath, collapsed = false }) => {
   const navigate = useNavigate();
 
   return (
     <div className="flex flex-col h-0 flex-1 border-r border-gray-200 bg-white">
       <div className="flex-1 flex flex-col pt-5 pb-4 overflow-y-auto">
-        <div className="flex items-center flex-shrink-0 px-4">
+        <div className={`flex items-center flex-shrink-0 px-4 ${collapsed ? 'justify-center' : ''}`}>
           <div className="flex items-center">
             <div className="h-8 w-8 bg-gray-900 rounded flex items-center justify-center">
               <MessageSquare className="h-5 w-5 text-white" />
             </div>
-            <span className="ml-2 text-lg font-semibold text-gray-900">
-              Educ Retro
-            </span>
+            {!collapsed && (
+              <span className="ml-2 text-lg font-semibold text-gray-900">
+                Educ Retro
+              </span>
+            )}
           </div>
         </div>
-        
+
         <nav className="mt-5 flex-1 px-2 space-y-1">
           {navigation.map((item) => {
             const Icon = item.icon;
             const current = isCurrentPath(item.href);
-            
+
             return (
               <button
                 key={item.name}
                 onClick={() => navigate(item.href)}
+                title={collapsed ? item.name : undefined}
                 className={`${
                   current
                     ? 'bg-gray-100 text-gray-900'
                     : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-                } group flex items-center px-3 py-2 text-sm font-medium w-full text-left transition-colors duration-150`}
+                } group flex items-center ${collapsed ? 'justify-center px-2' : 'px-3'} py-2 text-sm font-medium w-full text-left transition-colors duration-150`}
               >
                 <Icon
                   className={`${
                     current ? 'text-gray-900' : 'text-gray-400 group-hover:text-gray-500'
-                  } mr-3 flex-shrink-0 h-5 w-5`}
+                  } ${collapsed ? '' : 'mr-3'} flex-shrink-0 h-5 w-5`}
                 />
-                {item.name}
+                {!collapsed && item.name}
               </button>
             );
           })}
         </nav>
       </div>
-      
+
     </div>
   );
 };

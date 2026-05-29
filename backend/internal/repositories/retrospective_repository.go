@@ -717,8 +717,27 @@ func (r *RetrospectiveRepository) MergeItems(sourceItemID, targetItemID uuid.UUI
 	// Merge content (combine both contents)
 	mergedContent := targetItem.Content + " | " + sourceItem.Content
 
-	// Discard votes when merging (reset to 0)
-	mergedVotes := 0
+	// Move the source item's votes to the target, skipping users who already
+	// voted on the target (the UNIQUE(item_id, user_id) constraint forbids dupes).
+	// Any leftover duplicate rows on the source are removed by ON DELETE CASCADE
+	// when the source item is deleted below.
+	_, err = tx.Exec(`
+		UPDATE retrospective_votes
+		SET item_id = $1
+		WHERE item_id = $2
+		  AND user_id NOT IN (SELECT user_id FROM retrospective_votes WHERE item_id = $1)
+	`, targetItemID, sourceItemID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Recompute the denormalized counter from the actual (deduplicated) votes,
+	// keeping retrospective_items.votes in sync with retrospective_votes.
+	var mergedVotes int
+	err = tx.QueryRow(`SELECT COUNT(*) FROM retrospective_votes WHERE item_id = $1`, targetItemID).Scan(&mergedVotes)
+	if err != nil {
+		return nil, err
+	}
 
 	// Update target item with merged content and votes
 	updateQuery := `UPDATE retrospective_items SET content = $1, votes = $2, updated_at = NOW() WHERE id = $3 RETURNING created_at, updated_at`
@@ -727,7 +746,7 @@ func (r *RetrospectiveRepository) MergeItems(sourceItemID, targetItemID uuid.UUI
 		return nil, err
 	}
 
-	// Delete source item
+	// Delete source item (cascade removes any of its remaining vote rows)
 	deleteQuery := `DELETE FROM retrospective_items WHERE id = $1`
 	_, err = tx.Exec(deleteQuery, sourceItemID)
 	if err != nil {

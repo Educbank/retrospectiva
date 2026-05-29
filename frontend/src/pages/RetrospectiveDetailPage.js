@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from 'react-query';
-import { Users, Plus, Heart, MessageSquare, CheckCircle, AlertCircle, Trash2, Edit3, Filter, Calendar, X, Star, Eye, EyeOff, Clock, Play, Pause, Square, Download } from 'lucide-react';
+import { Users, Plus, Heart, MessageSquare, CheckCircle, AlertCircle, Trash2, Edit3, Calendar, X, Star, Eye, EyeOff, Clock, Play, Pause, Square, Download } from 'lucide-react';
 import { retrospectivesAPI, templatesAPI } from '../services/api';
 import { useAuth } from '../services/AuthContext';
 import useSSE from '../hooks/useSSE';
@@ -38,7 +38,6 @@ const RetrospectiveDetailPage = () => {
     // Remove the feedback section from description
     return description.replace(/## ✅ Action Item Concluído - .*?\n\n\*\*Parecer sobre a conclusão:\*\*\n.*?\n\n---/s, '').trim();
   };
-  const [actionItemFilter, setActionItemFilter] = useState('all'); // all, todo, in_progress, done
   const [draggedItem, setDraggedItem] = useState(null);
   const [dragOverItem, setDragOverItem] = useState(null);
   const [isCommentsBlurred, setIsCommentsBlurred] = useState(true);
@@ -651,9 +650,23 @@ ${editingActionItem.feedback}
   // Get categories from template data
   const categories = templateData?.categories?.map(cat => cat.id) || [];
 
+  // Categories + the fixed "Action Items" and "Kudos" boxes share one grid so
+  // they sit side by side on a single row on large screens, stacking
+  // responsively below. Literal strings so Tailwind picks them up.
+  const columnClassByCount = {
+    1: 'lg:grid-cols-1',
+    2: 'lg:grid-cols-2',
+    3: 'lg:grid-cols-3',
+    4: 'lg:grid-cols-4',
+    5: 'lg:grid-cols-5',
+    6: 'lg:grid-cols-6',
+  };
+  const totalBoxes = categories.length + 2; // + Action Items + Kudos
+  const boxesGridCols = columnClassByCount[totalBoxes] || 'lg:grid-cols-4';
+
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="w-full">
         <div className="space-y-8">
       {/* Header */}
       <div className="bg-white shadow rounded-lg p-6">
@@ -702,7 +715,7 @@ ${editingActionItem.feedback}
               )}
             
               {/* Timer Component - Only for retrospective owner */}
-              {isRetrospectiveOwner() && <Timer />}
+              {isRetrospectiveOwner() && <Timer retrospectiveId={id} />}
               
               {/* Export Button - Only for retrospective owner */}
               {isRetrospectiveOwner() && (
@@ -744,12 +757,8 @@ ${editingActionItem.feedback}
             </div>
           )}
 
-          {/* Retrospective Items */}
-          <div className={`grid grid-cols-1 gap-6 ${
-            retrospective?.template === 'went_well_to_improve' 
-              ? 'md:grid-cols-2' 
-              : 'md:grid-cols-2 lg:grid-cols-3'
-          }`}>
+          {/* Retrospective Items + Action Items + Kudos (single row of boxes) */}
+          <div className={`grid grid-cols-1 sm:grid-cols-2 gap-6 ${boxesGridCols}`}>
         {categories.map((categoryKey) => {
           const categoryInfo = getCategoryInfo(categoryKey);
           const items = itemsByCategory[categoryKey] || [];
@@ -949,40 +958,18 @@ ${editingActionItem.feedback}
             </div>
           );
             })}
-          </div>
 
-
-
-          {/* Action Items and Kudos */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Action Items */}
-        <div className="bg-white shadow rounded-lg p-6 min-h-[500px] flex flex-col">
+          {/* Action Items */}
+        <div className="bg-white shadow rounded-lg p-6 min-h-[400px] flex flex-col">
           <div className="mb-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-lg font-medium text-gray-900">Action Items</h3>
-                <p className="text-sm text-gray-500">Próximos passos e responsabilidades</p>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Filter className="h-4 w-4 text-gray-400" />
-                <select
-                  value={actionItemFilter}
-                  onChange={(e) => setActionItemFilter(e.target.value)}
-                  className="text-sm border border-gray-300 rounded-md px-2 py-1 focus:ring-blue-500 focus:border-blue-500"
-                >
-                  <option value="all">Todos</option>
-                  <option value="todo">A fazer</option>
-                  <option value="in_progress">Em andamento</option>
-                  <option value="done">Concluídos</option>
-                </select>
-              </div>
+            <div>
+              <h3 className="text-lg font-medium text-gray-900">Action Items</h3>
+              <p className="text-sm text-gray-500">Próximos passos e responsabilidades</p>
             </div>
           </div>
-        
+
         <div className="space-y-3 mb-4 flex-grow">
-          {retrospective.action_items?.filter(actionItem => 
-            actionItemFilter === 'all' || actionItem.status === actionItemFilter
-          ).map((actionItem) => (
+          {retrospective.action_items?.map((actionItem) => (
             <div key={actionItem.id} className={`p-4 border rounded-lg transition-all duration-200 ${
               isOverdue(actionItem.due_date, actionItem.status) ? 'border-red-200 bg-red-50' : 'border-gray-200'
             }`}>
@@ -1059,7 +1046,7 @@ ${editingActionItem.feedback}
         </div>
 
         {/* Kudos */}
-        <div className="bg-white shadow rounded-lg p-6 min-h-[500px] flex flex-col">
+        <div className="bg-white shadow rounded-lg p-6 min-h-[400px] flex flex-col">
           <div className="mb-4">
             <div>
               <h3 className="text-lg font-medium text-gray-900">Kudos</h3>

@@ -1,18 +1,46 @@
-import React, { useState, useEffect } from 'react';
-import { Clock, Play, Pause, Square, Plus, X } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Play, Pause, RotateCcw, ChevronDown } from 'lucide-react';
 import toast from 'react-hot-toast';
 
-const Timer = () => {
-  const [timer, setTimer] = useState({
-    isRunning: false,
-    duration: 0, // in seconds
-    remaining: 0, // in seconds
-    startTime: null
-  });
-  const [showTimerModal, setShowTimerModal] = useState(false);
-  const [timerMinutes, setTimerMinutes] = useState(5);
+const emptyTimer = {
+  isRunning: false,
+  duration: 0, // in seconds
+  remaining: 0, // in seconds
+  endTime: null // absolute ms timestamp when the timer hits 0 (only while running)
+};
 
-  // Timer functions
+const PRESETS = [1, 2, 5, 10]; // minutes
+
+// Circular progress ring sizing
+const RADIUS = 18;
+const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
+
+const Timer = ({ retrospectiveId }) => {
+  const storageKey = `educ-retro-timer-${retrospectiveId || 'default'}`;
+
+  // Lazy init: rehydrate from localStorage, recomputing remaining for the time
+  // that elapsed while the page was closed/refreshed.
+  const [timer, setTimer] = useState(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem(storageKey));
+      if (!saved || !saved.duration) return emptyTimer;
+
+      if (saved.isRunning && saved.endTime) {
+        const remaining = Math.max(0, Math.ceil((saved.endTime - Date.now()) / 1000));
+        if (remaining <= 0) {
+          return { ...saved, isRunning: false, remaining: 0, endTime: null };
+        }
+        return { ...saved, remaining };
+      }
+      return { ...saved, isRunning: false, endTime: null };
+    } catch {
+      return emptyTimer;
+    }
+  });
+  const [showOptions, setShowOptions] = useState(false);
+  const [timerMinutes, setTimerMinutes] = useState(5);
+  const containerRef = useRef(null);
+
   const formatTime = (seconds) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
@@ -20,14 +48,15 @@ const Timer = () => {
   };
 
   const startTimer = () => {
-    console.log('startTimer called, remaining:', timer.remaining, 'duration:', timer.duration);
-    if (timer.remaining <= 0 && timer.duration <= 0) return;
-    
+    // When finished (remaining 0) start over from the full duration.
+    const base = timer.remaining > 0 ? timer.remaining : timer.duration;
+    if (base <= 0) return;
+
     setTimer(prev => ({
       ...prev,
       isRunning: true,
-      startTime: Date.now(),
-      remaining: prev.remaining <= 0 ? prev.duration : prev.remaining
+      remaining: base,
+      endTime: Date.now() + base * 1000
     }));
   };
 
@@ -35,158 +64,165 @@ const Timer = () => {
     setTimer(prev => ({
       ...prev,
       isRunning: false,
-      startTime: null
+      endTime: null
     }));
   };
 
   const resetTimer = () => {
-    setTimer({
-      isRunning: false,
-      duration: 0,
-      remaining: 0,
-      startTime: null
-    });
+    setTimer(emptyTimer);
   };
 
-  const createTimer = () => {
-    const duration = timerMinutes * 60;
-    console.log('createTimer called, duration:', duration, 'minutes:', timerMinutes);
+  const createTimer = (minutes) => {
+    const duration = minutes * 60;
     setTimer({
       isRunning: true,
       duration: duration,
       remaining: duration,
-      startTime: Date.now()
+      endTime: Date.now() + duration * 1000
     });
-    setShowTimerModal(false);
+    setShowOptions(false);
   };
 
-  // Timer effect
+  // Persist on every change so a refresh can pick up where we left off.
   useEffect(() => {
-    console.log('Timer effect running, isRunning:', timer.isRunning, 'remaining:', timer.remaining);
-    let interval;
-    if (timer.isRunning && timer.remaining > 0) {
-      console.log('Starting interval');
-      interval = setInterval(() => {
-        setTimer(prev => {
-          const elapsed = Math.floor((Date.now() - prev.startTime) / 1000);
-          const newRemaining = Math.max(0, prev.duration - elapsed);
-          
-          console.log('Timer tick, elapsed:', elapsed, 'newRemaining:', newRemaining);
-          
-          if (newRemaining <= 0) {
-            // Timer finished
-            toast.success('Cronômetro finalizado!');
-            return {
-              ...prev,
-              isRunning: false,
-              remaining: 0,
-              startTime: null
-            };
-          }
-          
-          return {
-            ...prev,
-            remaining: newRemaining
-          };
-        });
-      }, 1000);
+    try {
+      if (timer.duration > 0) {
+        localStorage.setItem(storageKey, JSON.stringify(timer));
+      } else {
+        localStorage.removeItem(storageKey);
+      }
+    } catch {
+      // ignore storage errors (e.g. private mode)
     }
-    return () => clearInterval(interval);
-  }, [timer.isRunning, timer.startTime, timer.duration]);
+  }, [timer, storageKey]);
 
-  console.log('Timer component render, timer.duration:', timer.duration, 'showTimerModal:', showTimerModal);
+  // Countdown tick driven by the absolute endTime.
+  useEffect(() => {
+    if (!timer.isRunning || !timer.endTime) return;
+
+    const interval = setInterval(() => {
+      setTimer(prev => {
+        const remaining = Math.max(0, Math.ceil((prev.endTime - Date.now()) / 1000));
+        if (remaining <= 0) {
+          toast.success('Cronômetro finalizado!');
+          return { ...prev, isRunning: false, remaining: 0, endTime: null };
+        }
+        return { ...prev, remaining };
+      });
+    }, 250);
+
+    return () => clearInterval(interval);
+  }, [timer.isRunning, timer.endTime]);
+
+  // Close the dropdown when clicking outside.
+  useEffect(() => {
+    if (!showOptions) return;
+
+    const handleClickOutside = (e) => {
+      if (containerRef.current && !containerRef.current.contains(e.target)) {
+        setShowOptions(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showOptions]);
+
+  // Ring state
+  const progress = timer.duration > 0 ? timer.remaining / timer.duration : 0;
+  const finished = timer.duration > 0 && timer.remaining === 0;
+  const low = timer.isRunning && timer.remaining > 0 && timer.remaining <= 10;
+  const ringColor = finished ? '#ef4444' : low ? '#f59e0b' : '#2563eb';
+  const textColor = finished ? 'text-red-600' : low ? 'text-amber-600' : 'text-gray-800';
 
   return (
-    <>
-      {/* Timer Display */}
+    <div className="relative" ref={containerRef}>
+      {/* Active timer - circular ring (EasyRetro style) */}
       {timer.duration > 0 && (
         <div className="flex items-center space-x-2">
+          <div className={`relative h-11 w-11 ${finished ? 'animate-pulse' : ''}`}>
+            <svg className="h-11 w-11 -rotate-90" viewBox="0 0 44 44">
+              <circle cx="22" cy="22" r={RADIUS} fill="none" stroke="#e5e7eb" strokeWidth="4" />
+              <circle
+                cx="22"
+                cy="22"
+                r={RADIUS}
+                fill="none"
+                stroke={ringColor}
+                strokeWidth="4"
+                strokeLinecap="round"
+                strokeDasharray={CIRCUMFERENCE}
+                strokeDashoffset={CIRCUMFERENCE * (1 - progress)}
+                style={{ transition: 'stroke-dashoffset 0.3s linear, stroke 0.3s ease' }}
+              />
+            </svg>
+            <span
+              className={`absolute inset-0 flex items-center justify-center text-[11px] font-semibold tabular-nums ${textColor}`}
+            >
+              {formatTime(timer.remaining)}
+            </span>
+          </div>
+
           <button
             onClick={timer.isRunning ? pauseTimer : startTimer}
-            className="flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors bg-gray-100 text-gray-700 hover:bg-gray-200"
+            className="flex items-center justify-center p-2 rounded-md text-gray-700 bg-gray-100 hover:bg-gray-200 transition-colors"
+            title={timer.isRunning ? 'Pausar' : timer.remaining > 0 ? 'Continuar' : 'Reiniciar'}
           >
-            {timer.isRunning ? (
-              <Pause className="h-4 w-4" />
-            ) : (
-              <Play className="h-4 w-4" />
-            )}
-            <span>{formatTime(timer.remaining)}</span>
-            {timer.isRunning && (
-              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-            )}
+            {timer.isRunning ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+          </button>
+          <button
+            onClick={resetTimer}
+            className="flex items-center justify-center p-2 rounded-md text-gray-700 bg-gray-100 hover:bg-red-100 hover:text-red-600 transition-colors"
+            title="Parar e remover cronômetro"
+          >
+            <RotateCcw className="h-4 w-4" />
           </button>
         </div>
       )}
 
-      {/* Add Timer Button */}
+      {/* Combo trigger - opens the options dropdown below */}
       {timer.duration === 0 && (
         <button
-          onClick={() => {
-            console.log('Timer button clicked, showTimerModal:', showTimerModal);
-            setShowTimerModal(true);
-          }}
-          className="flex items-center justify-center space-x-2 px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors w-32"
+          onClick={() => setShowOptions((v) => !v)}
+          className="flex items-center justify-between space-x-2 px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors w-32"
         >
           <span>Timer</span>
+          <ChevronDown className={`h-4 w-4 transition-transform ${showOptions ? 'rotate-180' : ''}`} />
         </button>
       )}
 
-      {/* Timer Modal */}
-      {showTimerModal && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-[9999]">
-          <div className="relative top-20 mx-auto p-6 w-11/12 md:w-1/3 bg-white rounded-lg shadow-xl">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-medium text-gray-900">Configurar Cronômetro</h3>
+      {/* Options dropdown */}
+      {showOptions && timer.duration === 0 && (
+        <div className="absolute right-0 mt-2 w-56 bg-white border border-gray-200 rounded-lg shadow-lg z-50 p-3">
+          <p className="text-xs font-medium text-gray-500 mb-2">Iniciar cronômetro</p>
+
+          {/* Quick presets */}
+          <div className="grid grid-cols-2 gap-2 mb-3">
+            {PRESETS.map((min) => (
               <button
-                onClick={() => setShowTimerModal(false)}
-                className="text-gray-400 hover:text-gray-600"
+                key={min}
+                onClick={() => createTimer(min)}
+                className="px-3 py-2 text-sm font-medium rounded-md border border-gray-200 text-gray-700 hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 transition-colors"
               >
-                <X className="h-5 w-5" />
+                {min} min
               </button>
-            </div>
-            
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Minutos
-                </label>
-                <div className="relative">
-                  <input
-                    type="number"
-                    min="1"
-                    max="60"
-                    value={timerMinutes}
-                    onChange={(e) => setTimerMinutes(Math.max(1, Math.min(60, parseInt(e.target.value) || 1)))}
-                    className="w-full px-3 py-2 pr-8 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  />
-                  <div className="absolute inset-y-0 right-0 flex flex-col">
-                    <button
-                      onClick={() => setTimerMinutes(Math.min(60, timerMinutes + 1))}
-                      className="flex-1 px-2 text-gray-400 hover:text-gray-600 border-l border-gray-300 rounded-r-md hover:bg-gray-50"
-                    >
-                      ▲
-                    </button>
-                    <button
-                      onClick={() => setTimerMinutes(Math.max(1, timerMinutes - 1))}
-                      className="flex-1 px-2 text-gray-400 hover:text-gray-600 border-l border-gray-300 rounded-r-md hover:bg-gray-50"
-                    >
-                      ▼
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            <div className="flex justify-end space-x-3 mt-6">
+            ))}
+          </div>
+
+          {/* Custom minutes */}
+          <div className="border-t border-gray-100 pt-3">
+            <label className="block text-xs font-medium text-gray-500 mb-1">Personalizado</label>
+            <div className="flex items-center space-x-2">
+              <input
+                type="number"
+                min="1"
+                max="60"
+                value={timerMinutes}
+                onChange={(e) => setTimerMinutes(Math.max(1, Math.min(60, parseInt(e.target.value) || 1)))}
+                className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              />
               <button
-                onClick={() => setShowTimerModal(false)}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={createTimer}
-                className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                onClick={() => createTimer(timerMinutes)}
+                className="px-3 py-1.5 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 transition-colors whitespace-nowrap"
               >
                 Iniciar
               </button>
@@ -194,7 +230,7 @@ const Timer = () => {
           </div>
         </div>
       )}
-    </>
+    </div>
   );
 };
 
