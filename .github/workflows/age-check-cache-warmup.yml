@@ -1,0 +1,37 @@
+name: Educbank Compliance - Age-check Cache Warmup
+
+# Copiado (via PR automática aberta pelo repository-compliance) para
+# .github/workflows/age-check-cache-warmup.yml na RAIZ deste repositório.
+#
+# Por que este arquivo precisa existir aqui — diferente dos outros checks de
+# compliance, que não exigem nenhum arquivo local, só registro no
+# Organization Ruleset: o age-check usa um cache (ver README.md do
+# repository-compliance, seção "Cache") pra não estourar rate-limit das APIs
+# de npm/PyPI/nuget.org a cada PR. Popular esse cache exige rodar num push na
+# branch default deste repositório, e workflows registrados via Organization
+# Ruleset só disparam para pull_request/pull_request_target/merge_group —
+# nunca push (limitação confirmada na documentação do GitHub). Por isso este
+# stub físico é necessário; a lógica de verdade fica centralizada nos dois
+# reusable workflows chamados abaixo, mantidos em repository-compliance.
+on:
+  push:
+
+permissions: {}
+
+jobs:
+  warmup:
+    # Só roda no push pra branch default deste repositório, seja qual for o
+    # nome dela (main, master, develop...) — sem precisar customizar este
+    # arquivo por repositório.
+    if: github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+    uses: Educbank/repository-compliance/.github/workflows/age-check-cache-warmup.yml@556fdf73b9d773fc0a294a5e3d158915e1cc8c91 # v1.6
+    secrets: inherit
+
+  # Remove do cache entradas de dependências que saíram do lockfile (o
+  # warm-up acima só adiciona, nunca remove). Dispara no mesmo push, mas só
+  # faz trabalho de verdade uma vez por semana ISO — o resto das execuções é
+  # um cache-restore barato que já sai cedo.
+  prune:
+    if: github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+    uses: Educbank/repository-compliance/.github/workflows/age-check-cache-prune.yml@556fdf73b9d773fc0a294a5e3d158915e1cc8c91 # v1.6
+    secrets: inherit
