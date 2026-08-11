@@ -16,7 +16,8 @@ name: Educbank Compliance - Age-check Cache Warmup
 on:
   push:
 
-permissions: {}
+permissions:
+  contents: read
 
 jobs:
   warmup:
@@ -24,8 +25,9 @@ jobs:
     # nome dela (main, master, develop...) — sem precisar customizar este
     # arquivo por repositório.
     if: github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
-    uses: Educbank/repository-compliance/.github/workflows/age-check-cache-warmup.yml@556fdf73b9d773fc0a294a5e3d158915e1cc8c91 # v1.6
-    secrets: inherit
+    uses: Educbank/repository-compliance/.github/workflows/age-check-cache-warmup.yml@9443b725a47fbdb1e037987ef597a56a35ee14e0 # v1.11
+    secrets:
+      REPOSITORY_COMPLIANCE_READ_TOKEN: ${{ secrets.REPOSITORY_COMPLIANCE_READ_TOKEN }}
 
   # Remove do cache entradas de dependências que saíram do lockfile (o
   # warm-up acima só adiciona, nunca remove). Dispara no mesmo push, mas só
@@ -33,5 +35,6 @@ jobs:
   # um cache-restore barato que já sai cedo.
   prune:
     if: github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
-    uses: Educbank/repository-compliance/.github/workflows/age-check-cache-prune.yml@556fdf73b9d773fc0a294a5e3d158915e1cc8c91 # v1.6
-    secrets: inherit
+    uses: Educbank/repository-compliance/.github/workflows/age-check-cache-prune.yml@9443b725a47fbdb1e037987ef597a56a35ee14e0 # v1.11
+    secrets:
+      REPOSITORY_COMPLIANCE_READ_TOKEN: ${{ secrets.REPOSITORY_COMPLIANCE_READ_TOKEN }}
