@@ -25,7 +25,7 @@ jobs:
     # nome dela (main, master, develop...) — sem precisar customizar este
     # arquivo por repositório.
     if: github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
-    uses: Educbank/repository-compliance/.github/workflows/age-check-cache-warmup.yml@9443b725a47fbdb1e037987ef597a56a35ee14e0 # v1.11
+    uses: Educbank/repository-compliance/.github/workflows/age-check-cache-warmup.yml@3a5d0bb79e3b44b1517e303e5d5400f680193da4 # v1.12
     secrets:
       REPOSITORY_COMPLIANCE_READ_TOKEN: ${{ secrets.REPOSITORY_COMPLIANCE_READ_TOKEN }}
 
@@ -35,6 +35,6 @@ jobs:
   # um cache-restore barato que já sai cedo.
   prune:
     if: github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
-    uses: Educbank/repository-compliance/.github/workflows/age-check-cache-prune.yml@9443b725a47fbdb1e037987ef597a56a35ee14e0 # v1.11
+    uses: Educbank/repository-compliance/.github/workflows/age-check-cache-prune.yml@3a5d0bb79e3b44b1517e303e5d5400f680193da4 # v1.12
     secrets:
       REPOSITORY_COMPLIANCE_READ_TOKEN: ${{ secrets.REPOSITORY_COMPLIANCE_READ_TOKEN }}
